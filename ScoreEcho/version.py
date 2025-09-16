@@ -1,1 +1,1 @@
-TodayEchoVersion = "0.1.0"
+ScoreEchoVersion = "1.0.0"

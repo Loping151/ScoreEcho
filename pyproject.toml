@@ -1,5 +1,5 @@
 [project]
-name = "TodayEcho"
+name = "ScoreEcho"
 version = "0.1.0"
 description = "Default template for PDM package"
 authors = [
