@@ -20,9 +20,11 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
 
 评分更新模板依赖小维自身wwuid的更新。反正一般会及时。
 
-本插件用例：
+本插件用例：覆盖小程序/discord/游戏内截图/拍屏大师
 
 ![image.png](example.png)
 ![image.png](example2.png)
 ![image.png](example3.png)
 ![image.png](example4.png)
+
+本插件用时30min，何尝不是一种竞速。
