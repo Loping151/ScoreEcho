@@ -32,7 +32,6 @@ async def get_image(ev: Event):
 
     return res
 
-API_URL = "http://loping151.com:5678/score"
 from .config import seconfig
 
 sv_phantom_scorer = SV("鸣潮声骸评分")
@@ -105,7 +104,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                API_URL, 
+                seconfig.get_config('endpoint').data[0], 
                 headers=headers, 
                 json=payload, 
                 timeout=20.0  # Increased timeout slightly for potentially larger requests

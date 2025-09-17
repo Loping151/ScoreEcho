@@ -6,7 +6,9 @@ from gsuid_core.utils.plugins_config.models import (
 )
 
 CONIFG_DEFAULT = {
-    'xwtoken': GsListStrConfig('xwtoken', '找小维要', ['test'])}
+    'xwtoken': GsListStrConfig('xwtoken', '找小维要', ['test']),
+    'endpoint': GsListStrConfig('endpoint', '找小维要', ['loping151.com:5678'])
+}
 
 from gsuid_core.data_store import get_res_path
 
