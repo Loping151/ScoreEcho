@@ -104,7 +104,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                ''.join(seconfig.get_config('endpoint').data),
+                ':'.join(seconfig.get_config('endpoint').data),
                 headers=headers, 
                 json=payload, 
                 timeout=20.0  # Increased timeout slightly for potentially larger requests
