@@ -56,7 +56,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                 resp.raise_for_status()
                 image_bytes = resp.content
 
-                MAX_SIZE_BYTES = 1 * 1024 * 1024  # 1MB size limit
+                MAX_SIZE_BYTES = 2 * 1024 * 1024  # 1MB size limit
 
                 with Image.open(BytesIO(image_bytes)) as img:
                     # Convert to RGB if it's not, as RGBA/P etc. can't be saved as JPEG/WEBP directly
@@ -64,7 +64,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                         img = img.convert("RGB")
 
                     output_buffer = BytesIO()
-                    quality = 90  # Initial quality
+                    quality = 100  # Initial quality
                     
                     while quality > 10:
                         output_buffer.seek(0)  # Reset buffer to the beginning
@@ -72,7 +72,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                         img.save(output_buffer, format="WEBP", quality=quality)
                         if output_buffer.tell() < MAX_SIZE_BYTES:
                             break
-                        quality -= 10 # Decrease quality
+                        quality -= 5 # Decrease quality
                     
                     compressed_image_bytes = output_buffer.getvalue()
 
