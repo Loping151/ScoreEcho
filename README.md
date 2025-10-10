@@ -1,10 +1,12 @@
-OCR识别声骸并评分
+### 小维OCR识别声骸并评分
 
-需要在控制台填写token
+需要在控制台填写token，群里直接戳我就行
 
 如果报错没有PIL: uv add pillow
 
-api二次开发要求：上传图片大小不能超过1mb每张，速率不得超过10fps
+api二次开发要求：上传图片大小不能超过1mb每张，速率不得超过10fps。主要是为了支持引用回复，或者直接修改
+
+在线使用：[https://scoreecho.loping151.site/](https://scoreecho.loping151.site/)，注意web具有较高的数量限制。如果你一定要直接用web api也可以来用我的代理池（
 
 合法指令说明：
 
