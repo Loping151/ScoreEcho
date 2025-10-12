@@ -56,7 +56,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                 resp.raise_for_status()
                 image_bytes = resp.content
 
-                MAX_SIZE_BYTES = 2 * 1024 * 1024  # 1MB size limit
+                MAX_SIZE_BYTES = 2 * 1024 * 1024  # 2MB size limit
 
                 with Image.open(BytesIO(image_bytes)) as img:
                     # Convert to RGB if it's not, as RGBA/P etc. can't be saved as JPEG/WEBP directly
