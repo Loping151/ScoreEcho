@@ -40,7 +40,7 @@ PREFIXES = get_plugin_prefixs("ScoreEcho")
 
 
 @sv_phantom_scorer.on_command(('评分', '查分'))
-@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)?\s*([134][cC])\s*(.*)$', r'(.+?)(?:评分|查分)$')
+@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)?\s*([134])\s*(.*)$', r'(.+?)(?:评分|查分)$')
 async def score_phantom_handler(bot: Bot, ev: Event):
     """
     处理声骸评分请求，调用外部 API 并返回结果。
@@ -94,11 +94,11 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     # ev.text 包含了用户发送的完整命令，例如 "评分 忌炎 4c"
     raw_text = ev.text.strip('|')
     for PREFIX in PREFIXES:
-        raw_text = raw_text.replace(PREFIX, '').strip()
+        raw_text = raw_text.replace(PREFIX, '').replace("C", '').replace("c", '').replace("ost", '').replace("OST", '').replace("|", ' ').strip()
     if raw_text.startswith("评分") or raw_text.startswith("查分"):
         command_str = raw_text.replace("评分", '', 1).replace("查分", '', 1).strip()
     else:    
-        command_str = raw_text.replace("|", " ")
+        command_str = raw_text
     
     logger.info(f"准备发送评分请求，命令参数: {command_str}")
     
