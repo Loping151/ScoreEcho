@@ -18,7 +18,41 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
 
 ### 引用支持
 
-需要修改适配器，但十分容易。
+需要修改适配器，但十分容易。以nb onebotv11为例：
+
+```python
+    # onebot
+    elif bot.adapter.get_name() == 'OneBot V11':
+        from nonebot.adapters.onebot.v11.event import (
+            GroupMessageEvent,
+            PrivateMessageEvent,
+        )
+
+        if isinstance(ev, GroupMessageEvent) or isinstance(
+            ev, PrivateMessageEvent
+        ):
+            messages = ev.original_message
+            msg_id = str(ev.message_id)
+            if ev.sender.role == 'owner':
+                pm = 2
+            elif ev.sender.role == 'admin':
+                pm = 3
+
+            sender = ev.sender.dict(exclude_none=True)
+            sender['avatar'] = f'http://q1.qlogo.cn/g?b=qq&nk={user_id}&s=640'
+
+            if isinstance(ev, GroupMessageEvent):
+                user_type = 'group'
+                group_id = str(ev.group_id)
+            else:
+                user_type = 'direct'
+                
++           if hasattr(ev, 'reply') and ev.reply:
++               message.append(Message('reply', str(ev.reply.message_id)))
+        else:
+            logger.debug('[gsuid] 不支持该 onebotv11 事件...')
+            return
+```
 
 ### 其他实现逻辑说明
 

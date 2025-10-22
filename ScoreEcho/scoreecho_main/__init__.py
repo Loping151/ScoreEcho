@@ -8,6 +8,7 @@ from gsuid_core.sv import SV, get_plugin_available_prefix
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
 from gsuid_core.logger import logger
+import re
 
 async def get_image(ev: Event):
     res = []
@@ -37,7 +38,9 @@ from .config import seconfig
 sv_phantom_scorer = SV("鸣潮声骸评分")
 PREFIX = get_plugin_available_prefix("ScoreEcho")
 
-@sv_phantom_scorer.on_command(('评分'))
+
+@sv_phantom_scorer.on_command(('评分', '查分'))
+@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)?\s*([134][cC])\s*(.*)$')
 async def score_phantom_handler(bot: Bot, ev: Event):
     """
     处理声骸评分请求，调用外部 API 并返回结果。
@@ -89,7 +92,16 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 
     # 3. 准备请求头和请求体
     # ev.text 包含了用户发送的完整命令，例如 "评分 忌炎 4c"
-    command_str = ev.text.strip().split("评分", 1)[-1].strip()
+    raw_text = ev.text.strip().replace(PREFIX, '', 1).strip()
+    if raw_text.startswith("评分") or raw_text.startswith("查分"):
+        command_str = raw_text.replace("评分", '', 1).replace("查分", '', 1).strip()
+    else:    
+        match = re.match(r"(.+?)(?:评分|查分)?\s*([134][cC])\s*(.*)$", raw_text)
+        if match:
+            command_str = match.group(1).strip() + " " + match.group(2).strip() + " " + match.group(3).strip()
+        else:
+            return
+    logger.info(f"准备发送评分请求，命令参数: {command_str}")
     
     headers = {
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data[0]}",
