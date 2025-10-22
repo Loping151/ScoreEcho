@@ -48,7 +48,9 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
                 user_type = 'direct'
                 
 +           if hasattr(ev, 'reply') and ev.reply:
-+               message.append(Message('reply', ev.reply.model_dump_json()))
++               for seg in ev.reply.message:
++                   if seg.type == 'image' and seg.data:
++                       message.append(Message('image', seg.data['url']))
         else:
             logger.debug('[gsuid] 不支持该 onebotv11 事件...')
             return
