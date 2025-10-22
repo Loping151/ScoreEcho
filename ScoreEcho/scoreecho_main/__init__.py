@@ -40,8 +40,7 @@ PREFIXES = get_plugin_prefixs("ScoreEcho")
 
 
 @sv_phantom_scorer.on_command(('评分', '查分'))
-@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)?\s*([134][cC])\s*(.*)$')
-@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)$')
+@sv_phantom_scorer.on_regex(r'(.+?)(?:评分|查分)?\s*([134][cC])\s*(.*)$', r'(.+?)(?:评分|查分)$')
 async def score_phantom_handler(bot: Bot, ev: Event):
     """
     处理声骸评分请求，调用外部 API 并返回结果。
