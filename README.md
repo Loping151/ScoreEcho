@@ -71,25 +71,35 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
 **覆盖小程序/discord/游戏内截图/拍屏大师**
 
 展示多图合并
+
 ![image.png](example.png)
 
 小程序1，已尝试多个小程序均可识别
+
 ![image.png](example2.png)
 
 繁体discord+斜拍，以及配合TodayEcho插件使用例
+
 ![image.png](example3.png)
 
 未调谐的声骸
+
 ![image.png](example4.png)
 
-分辨率仅100p的图片，使用门锁拍摄
+分辨率仅100p的图片，使用门锁拍摄，由byd岸宝提供
+
 ![image.png](example5.png)
 
 支持wwuid面板直接重新评分，支持游戏内声骸对比页面的双评分
+
 ![image.png](example6.png)
 
-我去，这都行
+支持了
+
 ![image.png](example7.png)
 ![image.png](example8.png)
+![image.png](example9.png)
 
-本插件用时30min，何尝不是一种竞速。
+本插件初版用时30min，何尝不是一种竞速。
+
+后端已经支持了绝大部分情况的适配，此后大概率不会进行再次更新。
