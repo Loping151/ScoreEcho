@@ -55,7 +55,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 
     images_b64 = []
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             for image_url in upload_images:
                 # 下载图片
                 resp = await client.get(image_url)
