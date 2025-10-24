@@ -55,7 +55,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 
     images_b64 = []
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             for image_url in upload_images:
                 # 下载图片
                 resp = await client.get(image_url)
@@ -116,7 +116,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     
     # 4. 使用 httpx 异步发送 POST 请求
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 ':'.join(seconfig.get_config('endpoint').data),
                 headers=headers, 
