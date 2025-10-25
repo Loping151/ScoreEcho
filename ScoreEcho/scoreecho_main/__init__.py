@@ -35,7 +35,7 @@ async def get_image(ev: Event):
 
 from .config import seconfig
 
-sv_phantom_scorer = SV("鸣潮声骸评分", priority=10, help_="发送声骸截图并附带“评分”或“查分”指令即可进行评分。\n命令格式示例：\n评分 忌炎 4c\n查分 忌炎 4 cost\n也可以只发送“评分”或“查分”指令，插件会默认对图片进行评分。")
+sv_phantom_scorer = SV("鸣潮声骸评分", priority=10)
 PREFIXES = get_plugin_prefixs("ScoreEcho")
 
 
