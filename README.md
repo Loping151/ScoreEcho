@@ -76,33 +76,38 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
 
 展示多图合并
 
-![image.png](example.png)
+![image.png](examples/example.png)
 
 小程序1，已尝试多个小程序均可识别
 
-![image.png](example2.png)
+![image.png](examples/example2.png)
 
 繁体discord+斜拍，以及配合TodayEcho插件使用例
 
-![image.png](example3.png)
+![image.png](examples/example3.png)
 
 未调谐的声骸
 
-![image.png](example4.png)
+![image.png](examples/example4.png)
 
 分辨率仅100p的图片，使用门锁拍摄，由byd岸宝提供
 
-![image.png](example5.png)
+![image.png](examples/example5.png)
 
 支持wwuid面板直接重新评分，支持游戏内声骸对比页面的双评分
 
-![image.png](example6.png)
+![image.png](examples/example6.png)
 
-支持了
+支持较多复杂多声骸场景。算法含有自动聚类，以下场景并非针对性适配，有时可以支持一些预料之外的场景。
 
-![image.png](example7.png)
-![image.png](example8.png)
-![image.png](example9.png)
+![image.png](examples/example7.png)
+![image.png](examples/example8.png)
+![image.png](examples/example9.png)
+
+添加了语言识别，但是仅针对了DISCORD页面，不知道和游戏里是不是一样的，不玩了懒得上号看
+
+![image.png](examples/example10-1.png)
+![image.png](examples/example10-2.png)
 
 本插件初版用时30min，何尝不是一种竞速。
 
