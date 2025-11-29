@@ -39,10 +39,10 @@ sv_phantom_scorer = SV("鸣潮声骸评分", priority=10)
 PREFIXES = get_plugin_prefixs("ScoreEcho")
 
 
-@sv_phantom_scorer.on_command(('评分', '查分'), block=True)
+@sv_phantom_scorer.on_command(('评分', '查分', '分析'), block=True)
 @sv_phantom_scorer.on_regex(
-    (r'([\u4e00-\u9fa5]{1,10})(?:评分|查分)?\s*([cC]|[cC][oO][sS][tT])\s*([134])\s*([\u4e00-\u9fa5]{0,10})$|([\u4e00-\u9fa5]{1,10})(?:评分|查分)?\s*([134])\s*([cC]|[cC][oO][sS][tT])\s*([\u4e00-\u9fa5]{0,10})$',
-    r'([\u4e00-\u9fa5]{1,10})(?:评分|查分)$'), block=True
+    (r'([\u4e00-\u9fa5]{1,9})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*([\u4e00-\u9fa5]{0,9})$',
+    r'([\u4e00-\u9fa5]{1,9})(?:评分|查分|分析)$'), block=True # 索拉里斯最强共鸣者 9 个字
 )
 async def score_phantom_handler(bot: Bot, ev: Event):
     """
