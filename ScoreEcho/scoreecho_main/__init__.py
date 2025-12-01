@@ -98,10 +98,10 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     raw_text = ev.text.strip('|')
     for PREFIX in PREFIXES:
         raw_text = raw_text.replace(PREFIX, '').replace("C", '').replace("c", '').replace("ost", '').replace("OST", '').replace("|", ' ').strip()
-    if raw_text.startswith("评分") or raw_text.startswith("查分"):
-        command_str = raw_text.replace("评分", '', 1).replace("查分", '', 1).strip()
-    else:    
-        command_str = raw_text
+    # if raw_text.startswith("评分") or raw_text.startswith("查分"):
+    #     command_str = raw_text.replace("评分", '', 1).replace("查分", '', 1).strip()
+    # else:    
+    command_str = raw_text
     
     logger.info(f"准备发送评分请求，命令参数: {command_str}")
     
