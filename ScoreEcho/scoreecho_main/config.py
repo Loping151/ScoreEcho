@@ -1,13 +1,9 @@
-from gsuid_core.utils.plugins_config.models import (
-    GSC,
-    GsStrConfig,
-    GsBoolConfig,
-    GsListStrConfig,
-)
+from gsuid_core.utils.plugins_config.models import GsStrConfig
 
 CONIFG_DEFAULT = {
-    'xwtoken': GsListStrConfig('xwtoken', '找小维要', ['test']),
-    'endpoint': GsListStrConfig('endpoint', 'xwapi地址', ["https://scoreecho.loping151.site/score"])
+    'xwtoken': GsStrConfig('xwtoken', '找小维要', 'test'),
+    'endpoint': GsStrConfig('endpoint', 'xwapi地址', "https://scoreecho.loping151.site/score"),
+    'localalias': GsStrConfig('本地别名', '尝试使用本地别名文件', "./XutheringWavesUID/alias/char_alias.json")
 }
 
 from gsuid_core.data_store import get_res_path

@@ -3,12 +3,13 @@ import httpx
 from io import BytesIO
 
 from PIL import Image
-
+from gsuid_core.data_store import get_res_path
 from gsuid_core.sv import SV, get_plugin_prefixs
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
 from gsuid_core.logger import logger
-import re
+import os, json
+from pathlib import Path
 
 async def get_image(ev: Event):
     res = []
@@ -94,19 +95,37 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         return
 
     # 3. 准备请求头和请求体
-    # ev.text 包含了用户发送的完整命令，例如 "评分 忌炎 4c"
+    # 包含了用户发送的完整命令，例如 "评分 忌炎 4c"
     raw_text = ev.raw_text.strip()
     for PREFIX in PREFIXES:
         raw_text = raw_text.replace(PREFIX, '').replace("C", '').replace("c", '').replace("ost", '').replace("OST", '').replace("|", ' ').strip()
-    # if raw_text.startswith("评分") or raw_text.startswith("查分"):
-    #     command_str = raw_text.replace("评分", '', 1).replace("查分", '', 1).strip()
-    # else:    
     command_str = raw_text
+    
+    local_alias_path = seconfig.get_config('localalias').data
+    if local_alias_path.startswith('.'):
+        local_alias_path = get_res_path() / local_alias_path[2:]
+    else:
+        local_alias_path = Path(local_alias_path)
+        
+    if local_alias_path:
+        local_alias_path = Path(local_alias_path)
+        if local_alias_path.exists():
+            try:
+                with open(local_alias_path, 'r', encoding='utf-8') as f:
+                    alias_data = json.load(f)
+                for char_name, alias_list in alias_data.items():
+                    for alias in alias_list:
+                        if alias in command_str:
+                            command_str = command_str.replace(alias, char_name)
+                            logger.info(f"替换别名: {alias} -> {char_name}")
+                            break
+            except Exception as e:
+                logger.error(f"加载本地别名文件失败: {e}")
     
     logger.info(f"准备发送评分请求，命令参数: {command_str}")
     
     headers = {
-        "Authorization": f"Bearer {seconfig.get_config('xwtoken').data[0]}",
+        "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
         "Content-Type": "application/json"
     }
     payload = {
@@ -118,7 +137,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
-                ':'.join(seconfig.get_config('endpoint').data),
+                seconfig.get_config('endpoint').data,
                 headers=headers, 
                 json=payload, 
                 timeout=20.0  # Increased timeout slightly for potentially larger requests
