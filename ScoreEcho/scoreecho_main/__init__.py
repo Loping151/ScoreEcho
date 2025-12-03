@@ -95,7 +95,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 
     # 3. 准备请求头和请求体
     # ev.text 包含了用户发送的完整命令，例如 "评分 忌炎 4c"
-    raw_text = ev.text.strip('|')
+    raw_text = ev.raw_text.strip()
     for PREFIX in PREFIXES:
         raw_text = raw_text.replace(PREFIX, '').replace("C", '').replace("c", '').replace("ost", '').replace("OST", '').replace("|", ' ').strip()
     # if raw_text.startswith("评分") or raw_text.startswith("查分"):
