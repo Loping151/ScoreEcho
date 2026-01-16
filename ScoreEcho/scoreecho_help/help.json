@@ -54,6 +54,14 @@
         "need_ck": false,
         "need_sk": false,
         "need_admin": false
+      },
+      {
+        "name": "查看角色信息",
+        "desc": "查看已设置的角色信息",
+        "eg": "分析查看长离信息",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
       }
     ]
   },

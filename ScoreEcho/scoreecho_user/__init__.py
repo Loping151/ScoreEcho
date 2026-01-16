@@ -163,6 +163,7 @@ async def score_set_role_info(bot: Bot, ev: Event):
         return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
     info = raw_info.strip()
     replacements = {
+        "技能等级": "技能",
         "角色": "换角色",
         "人物": "换角色",
         "面板": "换角色",
@@ -188,3 +189,26 @@ async def score_set_role_info(bot: Bot, ev: Event):
     data[resolved] = info
     _save_char_info(char_info_path, data)
     return await bot.send(_format_msg(f"已设置{resolved}信息", is_group), at_sender=is_group)
+
+
+@sv_score_setting.on_regex(rf"^分析查看\s*(?P<role>{PATTERN})\s*信息$", block=True)
+async def score_view_role_info(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
+    uid = await _get_bound_uid(ev)
+    if not uid:
+        return await bot.send(_format_msg("请先绑定UID后再查看角色信息", is_group), at_sender=is_group)
+    alias_error = _check_alias_path()
+    if alias_error:
+        return await bot.send(_format_msg(alias_error, is_group), at_sender=is_group)
+    raw_name = ev.regex_dict.get("role") if isinstance(ev.regex_dict, dict) else None
+    if not raw_name:
+        return await bot.send(_format_msg("请提供角色名", is_group), at_sender=is_group)
+    resolved = _resolve_char_name(raw_name.strip())
+    if not resolved:
+        return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
+    char_info_path = _get_char_info_path(ev.user_id, uid)
+    data = _load_char_info(char_info_path)
+    info = data.get(resolved)
+    if not info:
+        return await bot.send(_format_msg(f"尚未设置{resolved}信息", is_group), at_sender=is_group)
+    return await bot.send(_format_msg(f"{resolved}信息：{info}", is_group), at_sender=is_group)
