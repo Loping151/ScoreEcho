@@ -21,7 +21,7 @@ except Exception:  # pragma: no cover - fallback if dependency missing
 
 PREFIXES = get_plugin_prefixs("ScoreEcho")
 sv_score_user = SV("ScoreEcho用户绑定", priority=9)
-sv_score_setting = SV("ScoreEcho设置", priority=9)
+sv_score_setting = SV("ScoreEcho设置", priority=3)
 
 
 def _get_char_info_path(user_id: str, uid: str) -> Path:
@@ -121,7 +121,7 @@ async def score_user_bind(bot: Bot, ev: Event):
     return await bot.send(msg_map.get(data, "删除失败，请稍后再试"), at_sender=True)
 
 
-@sv_score_setting.on_regex(r"^分析设置\s*用户名\s+(?P<name>.+)$", block=True)
+@sv_score_setting.on_regex(r"^分析设置\s*用户名\s*(?P<name>.+)$", block=True)
 async def score_set_username(bot: Bot, ev: Event):
     uid = await _get_bound_uid(ev)
     if not uid:

@@ -24,6 +24,9 @@ def _get_xwuid_fonts_path() -> Path:
     return _get_xwuid_plugin_root() / "utils" / "fonts"
 
 
+XW_FONT_PATH = _get_xwuid_fonts_path()
+
+
 def _get_xwuid_resource_path() -> Path:
     return get_res_path() / "XutheringWavesUID" / "resource"
 
@@ -48,9 +51,6 @@ def _copy_file_once(src: Path, dst: Path) -> None:
 
 def ensure_assets() -> None:
     _copy_tree_once(_get_xwuid_texture_path(), TEXTURE_PATH)
-    fonts_src = _get_xwuid_fonts_path()
-    for name in ["waves_fonts.ttf", "arial-unicode-ms-bold.ttf", "NotoColorEmoji.ttf"]:
-        _copy_file_once(fonts_src / name, FONT_PATH / name)
     map_src = _get_xwuid_resource_path() / "map" / "id2name.json"
     _copy_file_once(map_src, MAP_PATH / "id2name.json")
     AVATAR_PATH.mkdir(parents=True, exist_ok=True)

@@ -5,19 +5,24 @@ from typing import Dict, List, Tuple
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 from .charlist_assets import (
-    FONT_PATH,
     TEXTURE_PATH,
+    XW_FONT_PATH,
     ensure_assets,
     ensure_avatar,
     load_name_id_map,
 )
 from .score_rank import get_score_grade
 
+# Colors from XutheringWavesUID
+GOLD = (233, 203, 142)
+SPECIAL_GOLD = (255, 203, 99)
+GREY = (175, 175, 175)
 
 def _load_font(size: int) -> ImageFont.FreeTypeFont:
-    font_path = FONT_PATH / "waves_fonts.ttf"
+    font_path = XW_FONT_PATH / "waves_fonts.ttf"
     if font_path.exists():
         return ImageFont.truetype(str(font_path), size=size)
+    
     return ImageFont.load_default()
 
 
@@ -80,8 +85,7 @@ def draw_charlist_image(result_data: Dict[str, object], uid: str = "", name: str
     total_h = header_h + len(items) * (row_h + 15) + footer_h + margin_top
 
     # Create Background
-    # Try to load a background image, otherwise use dark color
-    bg_path = TEXTURE_PATH / "bg3.png" # Assuming this might exist from XWUID
+    bg_path = TEXTURE_PATH / "bg3.png"
     if bg_path.exists():
         bg_img = _load_image(bg_path)
         # Resize/Crop to cover
@@ -110,23 +114,24 @@ def draw_charlist_image(result_data: Dict[str, object], uid: str = "", name: str
 
     draw = ImageDraw.Draw(base)
 
-    # Fonts
-    font_title = _load_font(50)
-    font_name = _load_font(36)
-    font_uid = _load_font(28)
-    font_row_name = _load_font(32)
-    font_row_score = _load_font(44)
-    font_label = _load_font(20)
+    # Fonts - Matches XutheringWavesUID sizes
+    font_title = _load_font(42) # Header title
+    font_name = _load_font(30) # User name
+    font_uid = _load_font(25) # UID
+    
+    font_row_name = _load_font(30) # Role name
+    font_row_score = _load_font(30) # Score value
+    font_row_label = _load_font(16) # Score label
 
     # --- Header ---
     # Draw Title
     draw.text((40, 60), "声骸练度排行", fill="white", font=font_title, anchor="lm")
     
     # Draw User Info
-    draw.text((40, 130), f"漂泊者: {name}", fill=(220, 220, 220, 255), font=font_name, anchor="lm")
-    draw.text((40, 175), f"UID: {uid}", fill=(180, 180, 180, 255), font=font_uid, anchor="lm")
+    draw.text((40, 130), f"漂泊者: {name}", fill=GOLD, font=font_name, anchor="lm")
+    draw.text((40, 175), f"UID: {uid}", fill=GREY, font=font_uid, anchor="lm")
     
-    # Optional: Add a decoration line
+    # Decoration line
     draw.line((40, 200, card_w - 40, 200), fill=(255, 255, 255, 50), width=2)
     
     # --- Rows ---
@@ -141,29 +146,28 @@ def draw_charlist_image(result_data: Dict[str, object], uid: str = "", name: str
         
     for role_name, score, grade in items:
         # Create row canvas
-        # Check if we need to resize the bar background to fit card width
-        # bar_5star.png is usually wide enough, but let's be safe
         row_w = card_w - 80
         row_img = row_bg_base.resize((row_w, row_h)) if row_bg_path.exists() else row_bg_base.resize((row_w, row_h))
-        
-        # We might want a semi-transparent overlay if using the bar texture directly to darken it
-        # row_overlay = Image.new("RGBA", row_img.size, (0, 0, 0, 50))
-        # row_img = Image.alpha_composite(row_img, row_overlay)
 
         # 1. Avatar (Left side)
         role_id = name_id_map.get(role_name, "")
         avatar = _make_avatar(role_id)
-        # Resize avatar to fit nicely in row
+        # Resize avatar to fit nicely in row - slightly smaller than full height
         avatar = avatar.resize((120, 120))
-        # Place avatar
+        # Place avatar - Offset similar to XutheringWavesUID (60, 0) relative to bar?
+        # In our redesign we are centering it vertically in the bar
         row_img.paste(avatar, (20, 10), avatar)
         
-        # 2. Name (Next to Avatar)
         draw_row = ImageDraw.Draw(row_img)
+
+        # 2. Name
+        # XutheringWavesUID draws name at (180, 83) if it were level? No.
+        # We place name to the right of avatar
         draw_row.text((160, 50), role_name, fill="white", font=font_row_name, anchor="lm")
         
         # 3. Grade Icon (Right side)
         score_bg_path = TEXTURE_PATH / f"score_{grade.lower()}.png"
+        grade_end_x = row_w - 20
         if score_bg_path.exists():
             grade_icon = _load_image(score_bg_path)
             # Resize if too big
@@ -174,23 +178,35 @@ def draw_charlist_image(result_data: Dict[str, object], uid: str = "", name: str
             row_img.alpha_composite(grade_icon, (icon_x, icon_y))
             grade_end_x = icon_x
         else:
-            # Fallback text
-            grade_end_x = row_w - 20
-            draw_row.text((row_w - 60, row_h//2), grade, fill="gold", font=font_row_score, anchor="mm")
+            draw_row.text((row_w - 60, row_h//2), grade, fill=SPECIAL_GOLD, font=font_row_score, anchor="mm")
 
-        # 4. Score (Between Name and Grade)
-        # Align score to the right of name, or left of grade?
-        # Let's align it left of grade icon
+        # 4. Score (Left of Grade)
+        # Match XutheringWavesUID style: 
+        # Score value: font 30, white
+        # Label: font 16, SPECIAL_GOLD
+        
         score_x = grade_end_x - 30
-        draw_row.text((score_x, 60), f"{score:.1f}", fill="white", font=font_row_score, anchor="rm")
-        draw_row.text((score_x, 95), "评分", fill=(200, 200, 200, 255), font=font_label, anchor="rm")
+        draw_row.text(
+            (score_x, 42), # Adjusted y
+            f"{score:.2f}",
+            fill="white",
+            font=font_row_score,
+            anchor="rm"
+        )
+        draw_row.text(
+            (score_x, 75), # Adjusted y
+            "声骸分数",
+            fill=SPECIAL_GOLD,
+            font=font_row_label,
+            anchor="rm"
+        )
 
         # Paste row onto base
         base.paste(row_img, (40, y_offset), row_img)
         y_offset += row_h + 15
 
     # Footer
-    draw.text((card_w // 2, total_h - 30), "Powered by ScoreEcho", fill=(128, 128, 128, 200), font=font_label, anchor="mm")
+    draw.text((card_w // 2, total_h - 30), "Powered by ScoreEcho", fill=(128, 128, 128, 200), font=font_row_label, anchor="mm")
 
     buffer = BytesIO()
     base.save(buffer, format="PNG")
