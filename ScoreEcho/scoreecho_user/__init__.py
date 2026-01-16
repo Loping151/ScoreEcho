@@ -61,18 +61,26 @@ def _resolve_char_name(raw_name: str) -> Optional[str]:
     return alias_to_char_name_optional(raw_name)
 
 
+def _format_msg(msg: str, is_group: bool) -> str:
+    """根据聊天类型格式化消息"""
+    if is_group:
+        return " " + msg
+    return msg
+
+
 @sv_score_user.on_command(
     ("分析绑定", "分析切换", "分析查看", "分析删除", "分析删除全部"),
     block=True,
 )
 async def score_user_bind(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
     raw_uid = ev.text.strip().replace(" ", "")
     uid = raw_uid if raw_uid.isdigit() else ""
     user_id = ev.user_id
 
     if "分析绑定" in ev.command:
         if not uid:
-            return await bot.send(f"请使用【{PREFIXES[0]}分析绑定 UID】进行绑定", at_sender=True)
+            return await bot.send(_format_msg(f"请使用【{PREFIXES[0]}分析绑定 UID】进行绑定", is_group), at_sender=not is_group)
         code = await ScoreUser.insert_uid(user_id, ev.bot_id, uid, ev.group_id)
         if code in (0, -2):
             await ScoreUser.switch_uid_by_game(user_id, ev.bot_id, uid)
@@ -82,27 +90,27 @@ async def score_user_bind(bot: Bot, ev: Event):
             -2: f"分析UID[{uid}]已经绑定过了！",
             -3: "你输入了错误的格式！",
         }
-        return await bot.send(msg_map.get(code, "绑定失败，请稍后再试"), at_sender=True)
+        return await bot.send(_format_msg(msg_map.get(code, "绑定失败，请稍后再试"), is_group), at_sender=not is_group)
 
     if "分析切换" in ev.command:
         if not uid:
-            return await bot.send(f"请使用【{PREFIXES[0]}分析切换 UID】进行切换", at_sender=True)
+            return await bot.send(_format_msg(f"请使用【{PREFIXES[0]}分析切换 UID】进行切换", is_group), at_sender=not is_group)
         retcode = await ScoreUser.switch_uid_by_game(user_id, ev.bot_id, uid)
         if retcode == 0:
             cur_uid = await ScoreUser.get_uid_by_game(user_id, ev.bot_id)
-            return await bot.send(f"已切换当前分析UID为[{cur_uid}]", at_sender=True)
+            return await bot.send(_format_msg(f"已切换当前分析UID为[{cur_uid}]", is_group), at_sender=not is_group)
         if retcode == -3:
-            return await bot.send("当前仅绑定一个UID，无需切换", at_sender=True)
-        return await bot.send("尚未绑定该UID或未绑定任何UID", at_sender=True)
+            return await bot.send(_format_msg("当前仅绑定一个UID，无需切换", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("尚未绑定该UID或未绑定任何UID", is_group), at_sender=not is_group)
 
     if "分析查看" in ev.command:
         uid_list = await ScoreUser.get_uid_list_by_game(user_id, ev.bot_id)
         if not uid_list:
-            return await bot.send("尚未绑定任何UID", at_sender=True)
+            return await bot.send(_format_msg("尚未绑定任何UID", is_group), at_sender=not is_group)
         current_uid = uid_list[0]
         uids = "\n".join(uid_list)
         msg = f"当前使用UID：{current_uid}\n已绑定UID列表：\n{uids}"
-        return await bot.send(msg, at_sender=True)
+        return await bot.send(_format_msg(msg, is_group), at_sender=not is_group)
 
     if "分析删除全部" in ev.command:
         retcode = await ScoreUser.update_data(
@@ -111,46 +119,48 @@ async def score_user_bind(bot: Bot, ev: Event):
             **{ScoreUser.get_gameid_name(None): None},
         )
         if retcode == 0:
-            return await bot.send("已删除全部绑定UID", at_sender=True)
-        return await bot.send("尚未绑定任何UID", at_sender=True)
+            return await bot.send(_format_msg("已删除全部绑定UID", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("尚未绑定任何UID", is_group), at_sender=not is_group)
 
     if not uid:
-        return await bot.send(f"请使用【{PREFIXES[0]}分析删除 UID】删除", at_sender=True)
+        return await bot.send(_format_msg(f"请使用【{PREFIXES[0]}分析删除 UID】删除", is_group), at_sender=not is_group)
     data = await ScoreUser.delete_uid(user_id, ev.bot_id, uid)
     msg_map = {0: f"已删除UID[{uid}]", -1: f"UID[{uid}]不在绑定列表中"}
-    return await bot.send(msg_map.get(data, "删除失败，请稍后再试"), at_sender=True)
+    return await bot.send(_format_msg(msg_map.get(data, "删除失败，请稍后再试"), is_group), at_sender=not is_group)
 
 
 @sv_score_setting.on_regex(r"^分析设置\s*用户名\s*(?P<name>.+)$", block=True)
 async def score_set_username(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
     if not uid:
-        return await bot.send("请先绑定UID后再设置用户名", at_sender=True)
+        return await bot.send(_format_msg("请先绑定UID后再设置用户名", is_group), at_sender=not is_group)
     user_name = ev.regex_dict.get("name") if isinstance(ev.regex_dict, dict) else None
     if not user_name:
-        return await bot.send("请提供用户名内容", at_sender=True)
+        return await bot.send(_format_msg("请提供用户名内容", is_group), at_sender=not is_group)
     char_info_path = _get_char_info_path(ev.user_id, uid)
     data = _load_char_info(char_info_path)
     data["用户名"] = user_name.strip()
     _save_char_info(char_info_path, data)
-    return await bot.send("已设置用户名", at_sender=True)
+    return await bot.send(_format_msg("已设置用户名", is_group), at_sender=not is_group)
 
 
 @sv_score_setting.on_regex(rf"^分析设置\s*(?P<role>{PATTERN})\s*信息\s*(?P<info>.+)$", block=True)
 async def score_set_role_info(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
     if not uid:
-        return await bot.send("请先绑定UID后再设置角色信息", at_sender=True)
+        return await bot.send(_format_msg("请先绑定UID后再设置角色信息", is_group), at_sender=not is_group)
     alias_error = _check_alias_path()
     if alias_error:
-        return await bot.send(alias_error, at_sender=True)
+        return await bot.send(_format_msg(alias_error, is_group), at_sender=not is_group)
     raw_name = ev.regex_dict.get("role") if isinstance(ev.regex_dict, dict) else None
     raw_info = ev.regex_dict.get("info") if isinstance(ev.regex_dict, dict) else None
     if not raw_name or not raw_info:
-        return await bot.send("请提供角色名", at_sender=True)
+        return await bot.send(_format_msg("请提供角色名", is_group), at_sender=not is_group)
     resolved = _resolve_char_name(raw_name.strip())
     if not resolved:
-        return await bot.send("未找到对应的角色别名，请检查输入", at_sender=True)
+        return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=not is_group)
     info = raw_info.strip()
     replacements = {
         "角色": "换角色",
@@ -177,4 +187,4 @@ async def score_set_role_info(bot: Bot, ev: Event):
     data = _load_char_info(char_info_path)
     data[resolved] = info
     _save_char_info(char_info_path, data)
-    return await bot.send(f"已设置{resolved}信息", at_sender=True)
+    return await bot.send(_format_msg(f"已设置{resolved}信息", is_group), at_sender=not is_group)
