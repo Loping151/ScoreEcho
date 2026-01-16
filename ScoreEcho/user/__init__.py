@@ -11,10 +11,8 @@ from ..utils.database.models import ScoreUser
 from ..utils.resource import XW_CHAR_ALIAS_PATH, get_user_dir
 
 try:
-    from gsuid_core.plugins.XutheringWavesUID.XutheringWavesUID.utils.char_info_utils import (
-        PATTERN,
-    )
-    from gsuid_core.plugins.XutheringWavesUID.XutheringWavesUID.utils.name_convert import (
+    from ....XutheringWavesUID.XutheringWavesUID.utils.char_info_utils import PATTERN
+    from ....XutheringWavesUID.XutheringWavesUID.utils.name_convert import (
         alias_to_char_name_optional,
     )
 except Exception:  # pragma: no cover - fallback if dependency missing

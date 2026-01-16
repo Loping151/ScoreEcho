@@ -34,3 +34,5 @@ if change_made:
         Path(DATA_PATH) / 'ScoreEcho' / 'config.json', 'w', encoding='utf-8'
     ) as f:
         json.dump(se_config_data, f, ensure_ascii=False, indent=4)
+
+from . import score, user
