@@ -777,6 +777,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
             message = data.get("message")
             result_image_b64 = data.get("result_image_base64")
             score_results = data.get("score_results")
+            matched_character = data.get("matched_character")
 
             logger.info(f"API 响应消息: {message}")
 
@@ -785,7 +786,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
                 if role_name:
                     user_dir = get_user_dir(ev.user_id, uid)
                     user_dir.mkdir(parents=True, exist_ok=True)
-                    panel_path = user_dir / f"{role_name}.webp"
+                    panel_path = user_dir / f"{matched_character}.webp"
                     with open(panel_path, "wb") as f:
                         f.write(result_image_data)
                     if score_results is not None:
