@@ -12,7 +12,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 from gsuid_core.sv import SV, get_plugin_prefixs
 
-from ..config.config import seconfig
+from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
 from ..utils.resource import XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image
@@ -217,7 +217,7 @@ from gsuid_core.logger import logger
 from gsuid_core.models import Event
 from gsuid_core.sv import SV, get_plugin_prefixs
 
-from ..config.config import seconfig
+from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
 from ..utils.resource import XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image

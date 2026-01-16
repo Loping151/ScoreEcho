@@ -35,4 +35,5 @@ if change_made:
     ) as f:
         json.dump(se_config_data, f, ensure_ascii=False, indent=4)
 
-from . import score, user
+# noqa: F401 - Imported to initialize SV objects
+from . import scoreecho_config, scoreecho_help, scoreecho_score, scoreecho_user
