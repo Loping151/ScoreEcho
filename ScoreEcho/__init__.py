@@ -4,7 +4,7 @@ from gsuid_core.sv import Plugins
 from pathlib import Path
 import os, json
 
-Plugins(name="ScoreEcho", force_prefix=["ww"], allow_empty_prefix=False)
+Plugins(name="ScoreEcho", force_prefix=["ww"], allow_empty_prefix=False, priority=3)
 
 from gsuid_core.data_store import get_res_path
 DATA_PATH = get_res_path()

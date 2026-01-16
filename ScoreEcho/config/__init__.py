@@ -1,0 +1,1 @@
+"""ScoreEcho config package."""

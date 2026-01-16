@@ -1,0 +1,106 @@
+{
+  "第一步": {
+    "desc": "绑定UID，支持切换、删除等",
+    "data": [
+      {
+        "name": "绑定特征码",
+        "desc": "绑定特征码",
+        "eg": "分析绑定123456",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "切换特征码",
+        "desc": "切换绑定的账户",
+        "eg": "分析切换123456",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "删除特征码",
+        "desc": "删除特征码",
+        "eg": "分析删除123456",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "查看特征码列表",
+        "desc": "查看特征码列表",
+        "eg": "分析查看",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      }
+    ]
+  },
+  "第二步": {
+    "desc": "设置角色信息",
+    "data": [
+      {
+        "name": "设置用户名",
+        "desc": "设置用户名",
+        "eg": "分析设置用户名 漂泊者",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "设置角色信息",
+        "desc": "换角色等级",
+        "eg": "分析设置长离信息 角色满链",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      }
+    ]
+  },
+  "信息设置格式": {
+    "desc": "角色 90级 满链 技能 1010101010 武器 90级 满精 长离专武 套装 失序3暗套2",
+    "data": []
+  },
+  "技能等级设置顺序": {
+    "desc": "常态攻击 共鸣技能 共鸣回路 共鸣解放 变奏技能",
+    "data": []
+  },
+  "用例：": {
+    "desc": "xw设置长离信息 角色 3链 武器 精二 长离专武 套装 奔狼套",
+    "data": []
+  },
+  "第三步": {
+    "desc": "基于识别获取面板",
+    "data": [
+      {
+        "name": "获取面板",
+        "desc": "获取面板",
+        "eg": "分析长离 + 图片",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
+        "name": "查看面板",
+        "desc": "查看面板",
+        "eg": "分析长离面板",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      }
+    ]
+  },
+  "其他功能": {
+    "desc": "",
+    "data": [
+      {
+        "name": "练度统计",
+        "desc": "查询练度统计一览",
+        "eg": "分析练度",
+        "need_ck": true,
+        "need_sk": false,
+        "need_admin": false
+      }
+    ]
+  }
+}
