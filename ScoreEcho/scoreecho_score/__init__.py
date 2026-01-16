@@ -187,21 +187,21 @@ async def score_role_panel(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
     if not uid:
-        return await bot.send(_format_msg("请先使用分析绑定UID后再查看面板", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("请先使用分析绑定UID后再查看面板", is_group), at_sender=is_group)
     if not XW_CHAR_ALIAS_PATH.exists():
-        return await bot.send(_format_msg(f"别名文件不存在：{XW_CHAR_ALIAS_PATH}", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg(f"别名文件不存在：{XW_CHAR_ALIAS_PATH}", is_group), at_sender=is_group)
     raw_name = ev.regex_dict.get("char") if isinstance(ev.regex_dict, dict) else None
     if not raw_name:
-        return await bot.send(_format_msg("请提供角色名", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("请提供角色名", is_group), at_sender=is_group)
     if alias_to_char_name_optional is None:
-        return await bot.send(_format_msg("别名解析不可用，请检查资源", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("别名解析不可用，请检查资源", is_group), at_sender=is_group)
     role_name = alias_to_char_name_optional(raw_name)
     if not role_name:
-        return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
     user_dir = get_user_dir(ev.user_id, uid)
     panel_path = user_dir / f"{role_name}.webp"
     if not panel_path.exists():
-        return await bot.send(_format_msg("用户没有该角色面板图片，请使用分析指令获取", is_group), at_sender=not is_group)
+        return await bot.send(_format_msg("用户没有该角色面板图片，请使用分析指令获取", is_group), at_sender=is_group)
     with open(panel_path, "rb") as f:
         await bot.send(f.read())
 
@@ -231,12 +231,10 @@ def _format_msg(msg: str, is_group: bool) -> str:
 
 @sv_phantom_rank.on_fullmatch(("分析练度", "分析练度统计"), block=True)
 async def score_phantom_rank(bot: Bot, ev: Event):
-    is_group = ev.group_id is not None
-
     uid = await _get_bound_uid(ev)
     if not uid:
         msg = "请先使用分析绑定UID后再查看练度统计"
-        return await bot.send(_format_msg(msg, is_group), at_sender=not is_group)
+        return await bot.send(msg, at_sender=False)
 
     user_dir = get_user_dir(ev.user_id, uid)
     result_path = user_dir / "result.json"
@@ -244,21 +242,20 @@ async def score_phantom_rank(bot: Bot, ev: Event):
 
     if not result_data:
         msg = "暂无评分数据，请先使用分析指令生成评分数据"
-        return await bot.send(_format_msg(msg, is_group), at_sender=not is_group)
+        return await bot.send(msg, at_sender=False)
 
     # 格式化输出：角色-总分-评级
     msg_lines = ["=== 鸣潮声骸练度统计 ==="]
     for role_name, scores in result_data.items():
         if isinstance(scores, list) and scores:
             total_score = sum(scores)
-            avg_score = total_score / len(scores)
             rating = _get_rating(total_score)
-            msg_lines.append(f"{role_name}: 总分{total_score:.2f} 平均{avg_score:.2f} [{rating}]")
+            msg_lines.append(f"{role_name}: 总分{total_score:.2f} [{rating}]")
         else:
             msg_lines.append(f"{role_name}: 数据格式异常")
 
     msg = "\n".join(msg_lines)
-    return await bot.send(_format_msg(msg, is_group), at_sender=not is_group)
+    return await bot.send(msg, at_sender=False)
 
 @sv_phantom_score.on_command(("评分", "查分"), block=True)
 @sv_phantom_score.on_regex(
@@ -272,23 +269,23 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     alias_error = _check_alias_path()
     if alias_error:
-        await bot.send(_format_msg(alias_error, is_group), at_sender=not is_group)
+        await bot.send(_format_msg(alias_error, is_group), at_sender=is_group)
         return
 
     upload_images = await get_image(ev)
     if not upload_images:
-        await bot.send(_format_msg("请在发送命令的同时附带需要评分的声骸截图哦", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("请在发送命令的同时附带需要评分的声骸截图哦", is_group), at_sender=is_group)
         return
 
     try:
         images_b64 = await _encode_images(upload_images)
     except httpx.RequestError as e:
         logger.error(f"下载图片失败: {e}")
-        await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=is_group)
         return
     except Exception as e:
         logger.error(f"图片处理失败: {e}")
-        await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
     command_str = _build_command_str(ev.raw_text.strip())
@@ -327,7 +324,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                 result_image_data = base64.b64decode(result_image_b64)
                 await bot.send(result_image_data)
             else:
-                await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=not is_group)
+                await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=is_group)
 
     except httpx.HTTPStatusError as e:
         error_msg = f"API 请求失败，服务器返回错误码: {e.response.status_code}"
@@ -337,15 +334,15 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         except Exception:
             error_msg += f"\n原始响应: {e.response.text}"
         logger.error(error_msg)
-        await bot.send(error_msg, at_sender=not is_group)
+        await bot.send(error_msg, at_sender=is_group)
 
     except httpx.RequestError as e:
         logger.error(f"网络请求失败: {e}")
-        await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=not is_group)
+        await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=is_group)
 
     except Exception as e:
         logger.exception(f"处理评分时发生未知错误: {e}")
-        await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=not is_group)
+        await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=is_group)
 
 
 @sv_phantom_analysis.on_command(("分析",), block=True)
@@ -353,28 +350,28 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
     if not uid:
-        await bot.send(_format_msg("请先使用分析绑定UID后再进行分析", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("请先使用分析绑定UID后再进行分析", is_group), at_sender=is_group)
         return
 
     alias_error = _check_alias_path()
     if alias_error:
-        await bot.send(_format_msg(alias_error, is_group), at_sender=not is_group)
+        await bot.send(_format_msg(alias_error, is_group), at_sender=is_group)
         return
 
     upload_images = await get_image(ev)
     if not upload_images:
-        await bot.send(_format_msg("请在发送命令的同时附带需要分析的声骸截图哦", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("请在发送命令的同时附带需要分析的声骸截图哦", is_group), at_sender=is_group)
         return
 
     try:
         images_b64 = await _encode_images(upload_images)
     except httpx.RequestError as e:
         logger.error(f"下载图片失败: {e}")
-        await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=is_group)
         return
     except Exception as e:
         logger.error(f"图片处理失败: {e}")
-        await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=not is_group)
+        await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
     command_str = _build_command_str(ev.raw_text.strip())
@@ -439,10 +436,10 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
                         result_data[role_name] = score_results
                         _save_result_data(result_path, result_data)
                 else:
-                    await bot.send(_format_msg("未设置角色名，无法保存面板，请先使用设置角色", is_group), at_sender=not is_group)
+                    await bot.send(_format_msg("未设置角色名，无法保存面板，请先使用设置角色", is_group), at_sender=is_group)
                 await bot.send(result_image_data)
             else:
-                await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=not is_group)
+                await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=is_group)
 
     except httpx.HTTPStatusError as e:
         error_msg = f"API 请求失败，服务器返回错误码: {e.response.status_code}"
@@ -452,12 +449,12 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         except Exception:
             error_msg += f"\n原始响应: {e.response.text}"
         logger.error(error_msg)
-        await bot.send(error_msg, at_sender=not is_group)
+        await bot.send(error_msg, at_sender=is_group)
 
     except httpx.RequestError as e:
         logger.error(f"网络请求失败: {e}")
-        await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=not is_group)
+        await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=is_group)
 
     except Exception as e:
         logger.exception(f"处理分析时发生未知错误: {e}")
-        await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=not is_group)
+        await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=is_group)
