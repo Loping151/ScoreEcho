@@ -95,6 +95,14 @@
         "need_ck": false,
         "need_sk": false,
         "need_admin": false
+      },
+      {
+        "name": "删除面板",
+        "desc": "删除已保存的角色面板和评分数据",
+        "eg": "分析删除长离面板",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
       }
     ]
   },

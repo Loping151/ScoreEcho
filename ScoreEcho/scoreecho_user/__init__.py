@@ -74,8 +74,7 @@ def _format_msg(msg: str, is_group: bool) -> str:
 )
 async def score_user_bind(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
-    raw_uid = ev.text.strip().replace(" ", "")
-    uid = raw_uid if raw_uid.isdigit() else ""
+    uid = ''.join(filter(str.isdigit, ev.text.strip()))
     user_id = ev.user_id
 
     if "分析绑定" in ev.command:

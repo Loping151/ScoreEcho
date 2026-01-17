@@ -206,6 +206,62 @@ async def score_role_panel(bot: Bot, ev: Event):
         await bot.send(f.read())
 
 
+@sv_phantom_panel.on_regex(
+    rf"^分析\s*删除\s*(?P<char>{PATTERN})\s*(?P<type>面板|面包|🍞|card)$",
+    block=True,
+)
+async def delete_role_panel(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
+    uid = await _get_bound_uid(ev)
+    if not uid:
+        return await bot.send(_format_msg("请先使用分析绑定UID后再删除面板", is_group), at_sender=is_group)
+    if not XW_CHAR_ALIAS_PATH.exists():
+        return await bot.send(_format_msg(f"别名文件不存在：{XW_CHAR_ALIAS_PATH}", is_group), at_sender=is_group)
+    raw_name = ev.regex_dict.get("char") if isinstance(ev.regex_dict, dict) else None
+    if not raw_name:
+        return await bot.send(_format_msg("请提供角色名", is_group), at_sender=is_group)
+    if alias_to_char_name_optional is None:
+        return await bot.send(_format_msg("别名解析不可用，请检查资源", is_group), at_sender=is_group)
+    role_name = alias_to_char_name_optional(raw_name)
+    if not role_name:
+        return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
+
+    user_dir = get_user_dir(ev.user_id, uid)
+    panel_path = user_dir / f"{role_name}.webp"
+    result_path = user_dir / "result.json"
+
+    panel_exists = panel_path.exists()
+    score_exists = False
+
+    if panel_exists:
+        try:
+            panel_path.unlink()
+            logger.info(f"已删除面板图片: {panel_path}")
+        except Exception as e:
+            logger.error(f"删除面板图片失败: {e}")
+            return await bot.send(_format_msg(f"删除面板图片失败: {e}", is_group), at_sender=is_group)
+
+    if result_path.exists():
+        result_data = _load_result_data(result_path)
+        if role_name in result_data:
+            score_exists = True
+            del result_data[role_name]
+            _save_result_data(result_path, result_data)
+            logger.info(f"已删除评分数据: {role_name}")
+
+    if not panel_exists and not score_exists:
+        return await bot.send(_format_msg(f"未找到{role_name}的面板数据", is_group), at_sender=is_group)
+
+    msg_parts = []
+    if panel_exists:
+        msg_parts.append("面板图片")
+    if score_exists:
+        msg_parts.append("评分数据")
+
+    msg = f"已成功删除{role_name}的" + "和".join(msg_parts)
+    return await bot.send(_format_msg(msg, is_group), at_sender=is_group)
+
+
 def _get_rating(total_score: float) -> str:
     """根据总分判断评级"""
     if total_score >= 210:
@@ -375,6 +431,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         return
 
     command_str = _build_command_str(ev.raw_text.strip())
+    has_args = bool(ev.text.strip())
     alias_path = _get_local_alias_path()
     if alias_path:
         command_str, matched_name = _replace_alias(command_str, alias_path)
@@ -389,7 +446,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     if role_info:
         command_str = f"{command_str} {role_info}".strip()
 
-    logger.info(f"准备发送分析请求，命令参数: {command_str}")
+    logger.info(f"准备发送分析请求，命令参数: {command_str}, 是否有参数: {has_args}")
 
     headers = {
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
@@ -424,7 +481,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
 
             if result_image_b64:
                 result_image_data = base64.b64decode(result_image_b64)
-                if role_name:
+                if role_name and has_args:
                     user_dir = get_user_dir(ev.user_id, uid)
                     user_dir.mkdir(parents=True, exist_ok=True)
                     panel_path = user_dir / f"{matched_character}.webp"
@@ -435,8 +492,6 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
                         result_data = _load_result_data(result_path)
                         result_data[role_name] = score_results
                         _save_result_data(result_path, result_data)
-                else:
-                    await bot.send(_format_msg("未设置角色名，无法保存面板，请先使用设置角色", is_group), at_sender=is_group)
                 await bot.send(result_image_data)
             else:
                 await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=is_group)
