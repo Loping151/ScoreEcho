@@ -6,18 +6,12 @@ from typing import Dict, Optional
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
 from gsuid_core.sv import SV, get_plugin_prefixs
+from gsuid_core.data_store import get_res_path
 
+from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
-from ..utils.resource import XW_CHAR_ALIAS_PATH, get_user_dir
-
-try:
-    from ....XutheringWavesUID.XutheringWavesUID.utils.char_info_utils import PATTERN
-    from ....XutheringWavesUID.XutheringWavesUID.utils.name_convert import (
-        alias_to_char_name_optional,
-    )
-except Exception:  # pragma: no cover - fallback if dependency missing
-    PATTERN = r"[\u4e00-\u9fa5a-zA-Z0-9]{1,15}"
-    alias_to_char_name_optional = None
+from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
+from ..utils.char_utils import PATTERN, alias_to_char_name_optional
 
 PREFIXES = get_plugin_prefixs("ScoreEcho")
 sv_score_user = SV("ScoreEcho用户绑定", priority=9)
@@ -49,16 +43,44 @@ async def _get_bound_uid(ev: Event) -> Optional[str]:
     return await ScoreUser.get_uid_by_game(ev.user_id, ev.bot_id)
 
 
+def _get_local_alias_path() -> Optional[Path]:
+    """获取自定义别名文件路径"""
+    local_alias_path = seconfig.get_config("localalias").data
+    if not local_alias_path:
+        return None
+    if local_alias_path.startswith("."):
+        candidate = get_res_path() / local_alias_path[2:]
+    else:
+        candidate = Path(local_alias_path)
+    if candidate.exists():
+        return candidate
+    return None
+
+
+def _get_alias_path() -> Path:
+    """获取别名文件路径，优先级：自定义 > 本插件 > XWUID"""
+    local_path = _get_local_alias_path()
+    if local_path and local_path.exists():
+        return local_path
+    if CHAR_ALIAS_PATH.exists():
+        return CHAR_ALIAS_PATH
+    if XW_CHAR_ALIAS_PATH.exists():
+        return XW_CHAR_ALIAS_PATH
+    return CHAR_ALIAS_PATH  # 返回默认路径（即使不存在）
+
+
 def _check_alias_path() -> Optional[str]:
-    if not XW_CHAR_ALIAS_PATH.exists():
-        return f"别名文件不存在：{XW_CHAR_ALIAS_PATH}"
+    alias_path = _get_alias_path()
+    if not alias_path.exists():
+        return f"别名文件不存在：{alias_path}"
     return None
 
 
 def _resolve_char_name(raw_name: str) -> Optional[str]:
-    if alias_to_char_name_optional is None:
+    alias_path = _get_alias_path()
+    if not alias_path.exists():
         return None
-    return alias_to_char_name_optional(raw_name)
+    return alias_to_char_name_optional(alias_path, raw_name)
 
 
 def _format_msg(msg: str, is_group: bool) -> str:

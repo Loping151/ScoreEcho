@@ -14,17 +14,9 @@ from gsuid_core.sv import SV, get_plugin_prefixs
 
 from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
-from ..utils.resource import XW_CHAR_ALIAS_PATH, get_user_dir
+from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image
-
-try:
-    from ....XutheringWavesUID.XutheringWavesUID.utils.char_info_utils import PATTERN
-    from ....XutheringWavesUID.XutheringWavesUID.utils.name_convert import (
-        alias_to_char_name_optional,
-    )
-except Exception:  # pragma: no cover - fallback if dependency missing
-    PATTERN = r"[\u4e00-\u9fa5a-zA-Z0-9]{1,15}"
-    alias_to_char_name_optional = None
+from ..utils.char_utils import PATTERN, alias_to_char_name_optional
 
 
 sv_phantom_panel = SV("鸣潮声骸角色面板", priority=3)
@@ -102,10 +94,25 @@ def _get_local_alias_path() -> Optional[Path]:
 
 
 def _check_alias_path() -> Optional[str]:
-    alias_path = _get_local_alias_path()
+    """检查别名文件路径是否存在"""
+    alias_path = _get_alias_path()
     if not alias_path or not alias_path.exists():
         return f"别名文件不存在：{alias_path}"
     return None
+
+
+def _get_alias_path() -> Path:
+    """获取别名文件路径，优先使用本地路径"""
+    local_path = _get_local_alias_path()
+    if local_path and local_path.exists():
+        return local_path
+    # 兼容：如果本地不存在，尝试使用本插件的别名资源
+    if CHAR_ALIAS_PATH.exists():
+        return CHAR_ALIAS_PATH
+    # 最后尝试 XWUID 的别名资源
+    if XW_CHAR_ALIAS_PATH.exists():
+        return XW_CHAR_ALIAS_PATH
+    return CHAR_ALIAS_PATH  # 返回默认路径（即使不存在）
 
 
 def _replace_alias(command_str: str, alias_path: Path) -> str:
@@ -188,14 +195,16 @@ async def score_role_panel(bot: Bot, ev: Event):
     uid = await _get_bound_uid(ev)
     if not uid:
         return await bot.send(_format_msg("请先使用分析绑定UID后再查看面板", is_group), at_sender=is_group)
-    if not XW_CHAR_ALIAS_PATH.exists():
-        return await bot.send(_format_msg(f"别名文件不存在：{XW_CHAR_ALIAS_PATH}", is_group), at_sender=is_group)
+
+    alias_path = _get_alias_path()
+    if not alias_path.exists():
+        return await bot.send(_format_msg(f"别名文件不存在：{alias_path}", is_group), at_sender=is_group)
+
     raw_name = ev.regex_dict.get("char") if isinstance(ev.regex_dict, dict) else None
     if not raw_name:
         return await bot.send(_format_msg("请提供角色名", is_group), at_sender=is_group)
-    if alias_to_char_name_optional is None:
-        return await bot.send(_format_msg("别名解析不可用，请检查资源", is_group), at_sender=is_group)
-    role_name = alias_to_char_name_optional(raw_name)
+
+    role_name = alias_to_char_name_optional(alias_path, raw_name)
     if not role_name:
         return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
     user_dir = get_user_dir(ev.user_id, uid)
@@ -215,14 +224,16 @@ async def delete_role_panel(bot: Bot, ev: Event):
     uid = await _get_bound_uid(ev)
     if not uid:
         return await bot.send(_format_msg("请先使用分析绑定UID后再删除面板", is_group), at_sender=is_group)
-    if not XW_CHAR_ALIAS_PATH.exists():
-        return await bot.send(_format_msg(f"别名文件不存在：{XW_CHAR_ALIAS_PATH}", is_group), at_sender=is_group)
+
+    alias_path = _get_alias_path()
+    if not alias_path.exists():
+        return await bot.send(_format_msg(f"别名文件不存在：{alias_path}", is_group), at_sender=is_group)
+
     raw_name = ev.regex_dict.get("char") if isinstance(ev.regex_dict, dict) else None
     if not raw_name:
         return await bot.send(_format_msg("请提供角色名", is_group), at_sender=is_group)
-    if alias_to_char_name_optional is None:
-        return await bot.send(_format_msg("别名解析不可用，请检查资源", is_group), at_sender=is_group)
-    role_name = alias_to_char_name_optional(raw_name)
+
+    role_name = alias_to_char_name_optional(alias_path, raw_name)
     if not role_name:
         return await bot.send(_format_msg("未找到对应的角色别名，请检查输入", is_group), at_sender=is_group)
 
@@ -440,8 +451,10 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     char_info = _load_char_info(char_info_path)
     user_name = char_info.get("用户名", "").strip()
     role_name = _extract_role_from_command(command_str)
-    if role_name and alias_to_char_name_optional and XW_CHAR_ALIAS_PATH.exists():
-        role_name = matched_name or alias_to_char_name_optional(role_name) or role_name
+    if role_name:
+        alias_path = _get_alias_path()
+        resolved_name = alias_to_char_name_optional(alias_path, role_name)
+        role_name = matched_name or resolved_name or role_name
     role_info = char_info.get(matched_name, "").strip() if role_name else ""
     if role_info:
         command_str = f"{command_str} {role_info}".strip()
