@@ -116,6 +116,14 @@
         "need_ck": true,
         "need_sk": false,
         "need_admin": false
+      },
+      {
+        "name": "设置语言",
+        "desc": "设置面板图片的显示语言",
+        "eg": "分析设置语言en",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
       }
     ]
   }

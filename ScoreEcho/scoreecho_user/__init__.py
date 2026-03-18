@@ -150,6 +150,22 @@ async def score_user_bind(bot: Bot, ev: Event):
     return await bot.send(_format_msg(msg_map.get(data, "删除失败，请稍后再试"), is_group), at_sender=is_group)
 
 
+@sv_score_setting.on_regex(r"^分析设置\s*(?:语言|語言)\s*(?P<lang>\S+)$", block=True)
+async def score_set_language(bot: Bot, ev: Event):
+    is_group = ev.group_id is not None
+    from ..utils.database.models import ScoreLangSettings
+
+    VALID_LANGS = {"chs", "cht", "en", "jp", "kr"}
+    lang = (ev.regex_dict.get("lang") or "").strip().lower()
+    if lang not in VALID_LANGS:
+        msg = f"[分析] 语言设置参数无效\n可选: {', '.join(sorted(VALID_LANGS))}"
+        return await bot.send(_format_msg(msg, is_group), at_sender=is_group)
+    db_value = "" if lang == "chs" else lang
+    await ScoreLangSettings.set_lang(ev.user_id, db_value)
+    msg = f"[分析] 语言已设置为 {lang}"
+    return await bot.send(_format_msg(msg, is_group), at_sender=is_group)
+
+
 @sv_score_setting.on_regex(r"^分析设置\s*用户名\s*(?P<name>.+)$", block=True)
 async def score_set_username(bot: Bot, ev: Event):
     is_group = ev.group_id is not None

@@ -13,7 +13,7 @@ from gsuid_core.models import Event
 from gsuid_core.sv import SV
 
 from ..scoreecho_config.config import seconfig
-from ..utils.database.models import ScoreUser
+from ..utils.database.models import ScoreUser, ScoreLangSettings
 from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image
 from ..utils.char_utils import PATTERN, alias_to_char_name_optional
@@ -355,10 +355,13 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
         "Content-Type": "application/json",
     }
+    user_lang = await ScoreLangSettings.get_lang(ev.user_id)
     payload = {
         "command_str": command_str,
         "images_base64": images_b64,
     }
+    if user_lang:
+        payload["lang"] = user_lang
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -457,11 +460,14 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     user_data: Dict[str, str] = {"uid": uid}
     if user_name:
         user_data["user_name"] = user_name
+    analysis_lang = await ScoreLangSettings.get_lang(ev.user_id)
     payload = {
         "command_str": command_str,
         "images_base64": images_b64,
         "user_data": user_data,
     }
+    if analysis_lang:
+        payload["lang"] = analysis_lang
 
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
