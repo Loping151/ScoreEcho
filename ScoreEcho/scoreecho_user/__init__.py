@@ -91,7 +91,13 @@ def _format_msg(msg: str, is_group: bool) -> str:
 
 
 @sv_score_user.on_command(
-    ("分析绑定", "分析切换", "分析查看", "分析删除", "分析删除全部"),
+    (
+        "分析绑定", "分析綁定",
+        "分析切换", "分析切換",
+        "分析查看",
+        "分析删除", "分析刪除",
+        "分析删除全部", "分析刪除全部",
+    ),
     block=True,
 )
 async def score_user_bind(bot: Bot, ev: Event):
@@ -99,7 +105,7 @@ async def score_user_bind(bot: Bot, ev: Event):
     uid = ''.join(filter(str.isdigit, ev.text.strip()))
     user_id = ev.user_id
 
-    if "分析绑定" in ev.command:
+    if "绑定" in ev.command or "綁定" in ev.command:
         if not uid:
             return await bot.send(_format_msg(f"请使用【{PREFIXES[0]}分析绑定 UID】进行绑定", is_group), at_sender=is_group)
         code = await ScoreUser.insert_uid(user_id, ev.bot_id, uid, ev.group_id)
@@ -113,7 +119,7 @@ async def score_user_bind(bot: Bot, ev: Event):
         }
         return await bot.send(_format_msg(msg_map.get(code, "绑定失败，请稍后再试"), is_group), at_sender=is_group)
 
-    if "分析切换" in ev.command:
+    if "切换" in ev.command or "切換" in ev.command:
         if not uid:
             return await bot.send(_format_msg(f"请使用【{PREFIXES[0]}分析切换 UID】进行切换", is_group), at_sender=is_group)
         retcode = await ScoreUser.switch_uid_by_game(user_id, ev.bot_id, uid)
@@ -124,7 +130,7 @@ async def score_user_bind(bot: Bot, ev: Event):
             return await bot.send(_format_msg("当前仅绑定一个UID，无需切换", is_group), at_sender=is_group)
         return await bot.send(_format_msg("尚未绑定该UID或未绑定任何UID", is_group), at_sender=is_group)
 
-    if "分析查看" in ev.command:
+    if "查看" in ev.command:
         uid_list = await ScoreUser.get_uid_list_by_game(user_id, ev.bot_id)
         if not uid_list:
             return await bot.send(_format_msg("尚未绑定任何UID", is_group), at_sender=is_group)
@@ -133,7 +139,7 @@ async def score_user_bind(bot: Bot, ev: Event):
         msg = f"当前使用UID：{current_uid}\n已绑定UID列表：\n{uids}"
         return await bot.send(_format_msg(msg, is_group), at_sender=is_group)
 
-    if "分析删除全部" in ev.command:
+    if "删除全部" in ev.command or "刪除全部" in ev.command:
         retcode = await ScoreUser.update_data(
             user_id=user_id,
             bot_id=ev.bot_id,
@@ -150,7 +156,7 @@ async def score_user_bind(bot: Bot, ev: Event):
     return await bot.send(_format_msg(msg_map.get(data, "删除失败，请稍后再试"), is_group), at_sender=is_group)
 
 
-@sv_score_setting.on_regex(r"^分析设置\s*(?:语言|語言)\s*(?P<lang>\S+)$", block=True)
+@sv_score_setting.on_regex(r"^分析[设設]置\s*(?:语言|語言)\s*(?P<lang>\S+)$", block=True)
 async def score_set_language(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     from ..utils.database.models import ScoreLangSettings
@@ -166,7 +172,7 @@ async def score_set_language(bot: Bot, ev: Event):
     return await bot.send(_format_msg(msg, is_group), at_sender=is_group)
 
 
-@sv_score_setting.on_regex(r"^分析设置\s*用户名\s*(?P<name>.+)$", block=True)
+@sv_score_setting.on_regex(r"^分析[设設]置\s*用[户戶]名\s*(?P<name>.+)$", block=True)
 async def score_set_username(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
@@ -182,7 +188,7 @@ async def score_set_username(bot: Bot, ev: Event):
     return await bot.send(_format_msg("已设置用户名", is_group), at_sender=is_group)
 
 
-@sv_score_setting.on_regex(rf"^分析设置\s*(?P<role>{PATTERN})\s*信息\s*(?P<info>.+)$", block=True)
+@sv_score_setting.on_regex(rf"^分析[设設]置\s*(?P<role>{PATTERN})\s*(?:信息|資訊)\s*(?P<info>.+)$", block=True)
 async def score_set_role_info(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)
@@ -201,23 +207,35 @@ async def score_set_role_info(bot: Bot, ev: Event):
     info = raw_info.strip()
     replacements = {
         "技能等级": "技能",
+        "技能等級": "技能",
+        "個人資訊": "换角色",
+        "个人信息": "换角色",
         "角色": "换角色",
         "人物": "换角色",
         "面板": "换角色",
+        "資訊": "换角色",
         "信息": "换角色",
-        "个人信息": "换角色",
         "武器": "换武器",
+        "裝備": "换武器",
         "装备": "换武器",
+        "合鳴": "换合鸣",
         "合鸣": "换合鸣",
+        "套裝": "换合鸣",
         "套装": "换合鸣",
+        "聲骸": "换声骸",
         "声骸": "换声骸",
+        "聖遺物": "换声骸",
         "圣遗物": "换声骸",
-        "敌人": "换敌人",
-        "环境": "换敌人",
-        "怪": "换敌人",
-        "怪物": "换敌人",
+        "敵人資訊": "换敌人",
         "敌人信息": "换敌人",
+        "怪物資訊": "换敌人",
         "怪物信息": "换敌人",
+        "敵人": "换敌人",
+        "敌人": "换敌人",
+        "環境": "换敌人",
+        "环境": "换敌人",
+        "怪物": "换敌人",
+        "怪": "换敌人",
     }
     for key, value in replacements.items():
         info = re.sub(rf"(?<!换){key}", value, info)
@@ -228,7 +246,7 @@ async def score_set_role_info(bot: Bot, ev: Event):
     return await bot.send(_format_msg(f"已设置{resolved}信息", is_group), at_sender=is_group)
 
 
-@sv_score_setting.on_regex(rf"^分析查看\s*(?P<role>{PATTERN})\s*信息$", block=True)
+@sv_score_setting.on_regex(rf"^分析查看\s*(?P<role>{PATTERN})\s*(?:信息|資訊)$", block=True)
 async def score_view_role_info(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)

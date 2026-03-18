@@ -172,7 +172,7 @@ async def _get_bound_uid(ev: Event) -> Optional[str]:
 
 
 @sv_phantom_panel.on_regex(
-    rf"^分析\s*(?P<char>{PATTERN})\s*(?P<type>面板|面包|🍞|card)$",
+    rf"^分析\s*(?P<char>{PATTERN})\s*(?P<type>面板|面包|麵包|🍞|card)$",
     block=True,
 )
 async def score_role_panel(bot: Bot, ev: Event):
@@ -201,7 +201,7 @@ async def score_role_panel(bot: Bot, ev: Event):
 
 
 @sv_phantom_panel.on_regex(
-    rf"^分析\s*删除\s*(?P<char>{PATTERN})\s*(?P<type>面板|面包|🍞|card)$",
+    rf"^分析\s*[删刪]除\s*(?P<char>{PATTERN})\s*(?P<type>面板|面包|麵包|🍞|card)$",
     block=True,
 )
 async def delete_role_panel(bot: Bot, ev: Event):
@@ -281,7 +281,7 @@ def _format_msg(msg: str, is_group: bool) -> str:
     return msg
 
 
-@sv_phantom_rank.on_fullmatch(("分析练度", "分析练度统计"), block=True)
+@sv_phantom_rank.on_fullmatch(("分析练度", "分析練度", "分析练度统计", "分析練度統計"), block=True)
 async def score_phantom_rank(bot: Bot, ev: Event):
     uid = await _get_bound_uid(ev)
     if not uid:
@@ -309,11 +309,11 @@ async def score_phantom_rank(bot: Bot, ev: Event):
     msg = "\n".join(msg_lines)
     return await bot.send(msg, at_sender=False)
 
-@sv_phantom_score.on_command(("评分", "查分", "pf"), block=True)
+@sv_phantom_score.on_command(("评分", "評分", "查分", "pf"), block=True)
 @sv_phantom_score.on_regex(
     (
         rf"({PATTERN})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*({PATTERN})?$",
-        rf"({PATTERN})(?:评分|查分)$",
+        rf"({PATTERN})(?:评分|評分|查分)$",
     ),
     block=True,
 )
