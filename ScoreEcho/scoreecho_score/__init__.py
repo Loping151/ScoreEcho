@@ -10,7 +10,7 @@ from gsuid_core.bot import Bot
 from gsuid_core.data_store import get_res_path
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
-from gsuid_core.sv import SV, get_plugin_prefixs
+from gsuid_core.sv import SV
 
 from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
@@ -23,8 +23,6 @@ sv_phantom_panel = SV("鸣潮声骸角色面板", priority=3)
 sv_phantom_score = SV("鸣潮声骸评分", priority=10)
 sv_phantom_analysis = SV("鸣潮声骸分析", priority=10)
 sv_phantom_rank = SV("鸣潮声骸练度", priority=3)
-PREFIXES = get_plugin_prefixs("ScoreEcho")
-
 
 async def get_image(ev: Event):
     res = []
@@ -131,19 +129,6 @@ def _replace_alias(command_str: str, alias_path: Path) -> str:
         logger.error(f"加载本地别名文件失败: {e}")
     return command_str, matched_name
 
-
-def _build_command_str(raw_text: str) -> str:
-    for prefix in PREFIXES:
-        raw_text = (
-            raw_text.replace(prefix, "")
-            .replace("C", "")
-            .replace("c", "")
-            .replace("ost", "")
-            .replace("OST", "")
-            .replace("|", " ")
-            .strip()
-        )
-    return raw_text
 
 
 def _extract_role_from_command(command_str: str) -> str:
@@ -355,7 +340,11 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
-    command_str = _build_command_str(ev.raw_text.strip())
+    if ev.regex_group:
+        command_str = ' '.join(g for g in ev.regex_group if g)
+    else:
+        command_str = ev.text.strip()
+
     alias_path = _get_local_alias_path()
     if alias_path:
         command_str, _ = _replace_alias(command_str, alias_path)
@@ -441,8 +430,8 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
-    command_str = _build_command_str(ev.raw_text.strip())
-    has_args = bool(ev.text.strip())
+    command_str = ev.text.strip()
+    has_args = bool(command_str)
     alias_path = _get_local_alias_path()
     if alias_path:
         command_str, matched_name = _replace_alias(command_str, alias_path)
