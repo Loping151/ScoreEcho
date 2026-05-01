@@ -12,10 +12,17 @@ from ..scoreecho_config.config import seconfig
 from ..utils.database.models import ScoreUser
 from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.char_utils import PATTERN, alias_to_char_name_optional
+from ..utils.xwuid_bridge import email_login_entry as _xw_email_login_entry
 
 PREFIXES = get_plugin_prefixs("ScoreEcho")
 sv_score_user = SV("ScoreEcho用户绑定", priority=9)
 sv_score_setting = SV("ScoreEcho设置", priority=3)
+sv_score_email_login = SV("ScoreEcho国际服登录", priority=4)
+
+
+@sv_score_email_login.on_fullmatch(("分析登录", "分析登陸", "分析登入"), block=True)
+async def score_email_login_entry(bot: Bot, ev: Event):
+    return await _xw_email_login_entry(bot, ev)
 
 
 def _get_char_info_path(user_id: str, uid: str) -> Path:

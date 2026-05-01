@@ -3,6 +3,14 @@
     "desc": "绑定UID，支持切换、删除等",
     "data": [
       {
+        "name": "国际服登录",
+        "desc": "国际服账号通过邮箱密码登录(依赖XutheringWavesUID)",
+        "eg": "分析登录",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
+      },
+      {
         "name": "绑定特征码",
         "desc": "绑定特征码",
         "eg": "分析绑定123456",

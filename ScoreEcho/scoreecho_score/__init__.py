@@ -17,6 +17,11 @@ from ..utils.database.models import ScoreUser, ScoreLangSettings
 from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image
 from ..utils.char_utils import PATTERN, alias_to_char_name_optional
+from ..utils.xwuid_bridge import (
+    fetch_baseinfo,
+    find_xwuid_net_uid,
+    get_qq_avatar_url,
+)
 
 
 sv_phantom_panel = SV("鸣潮声骸角色面板", priority=3)
@@ -169,6 +174,57 @@ async def _encode_images(upload_images):
 
 async def _get_bound_uid(ev: Event) -> Optional[str]:
     return await ScoreUser.get_uid_by_game(ev.user_id, ev.bot_id)
+
+
+async def _resolve_score_uid(ev: Event) -> Optional[str]:
+    """获取 ScoreEcho 当前 UID。
+
+    若 xwuid 上绑定了国际服 UID 且本表里没有，自动添加并切换；
+    若已存在则保持用户当前在 ScoreEcho 切换的 UID 不动。
+    """
+    user_id = ev.user_id
+    bot_id = ev.bot_id
+
+    xw_net_uid = await find_xwuid_net_uid(user_id, bot_id)
+    if xw_net_uid:
+        score_uids = await ScoreUser.get_uid_list_by_game(user_id, bot_id) or []
+        if xw_net_uid not in score_uids:
+            code = await ScoreUser.insert_uid(user_id, bot_id, xw_net_uid, ev.group_id)
+            if code in (0, -2):
+                await ScoreUser.switch_uid_by_game(user_id, bot_id, xw_net_uid)
+            logger.info(f"[ScoreEcho] 自动从 xwuid 添加国际服 UID {xw_net_uid}")
+
+    return await ScoreUser.get_uid_by_game(user_id, bot_id)
+
+
+async def _build_user_data(
+    ev: Event, uid: str, char_user_name: str = ""
+) -> Dict[str, object]:
+    """组装传给评分/分析 API 的 ``user_data``。
+
+    若当前 UID 在 xwuid 上能拉到 launcher 面板，叠加联觉/索拉等阶；
+    头像始终用 QQ 头像（user_id 非数字则不带）。
+    """
+    user_data: Dict[str, object] = {"uid": uid}
+    user_name = char_user_name
+
+    info = await fetch_baseinfo(ev.user_id, ev.bot_id, uid)
+    if info:
+        if not user_name and info.get("role_name"):
+            user_name = str(info["role_name"])
+        if info.get("union_level") is not None:
+            user_data["union_level"] = info["union_level"]
+        if info.get("world_level") is not None:
+            user_data["world_level"] = info["world_level"]
+
+    if user_name:
+        user_data["user_name"] = user_name
+
+    avatar = get_qq_avatar_url(ev.user_id)
+    if avatar:
+        user_data["avatar_url"] = avatar
+
+    return user_data
 
 
 @sv_phantom_panel.on_regex(
@@ -356,10 +412,17 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         "Content-Type": "application/json",
     }
     user_lang = await ScoreLangSettings.get_lang(ev.user_id)
-    payload = {
+    payload: Dict[str, object] = {
         "command_str": command_str,
         "images_base64": images_b64,
     }
+
+    uid = await _resolve_score_uid(ev)
+    if uid:
+        char_info = _load_char_info(_get_char_info_path(ev.user_id, uid))
+        user_data = await _build_user_data(ev, uid, char_info.get("用户名", "").strip())
+        payload["user_data"] = user_data
+
     if user_lang:
         payload["lang"] = user_lang
 
@@ -407,7 +470,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 @sv_phantom_analysis.on_command(("分析",), block=True)
 async def analyze_phantom_handler(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
-    uid = await _get_bound_uid(ev)
+    uid = await _resolve_score_uid(ev)
     if not uid:
         await bot.send(_format_msg("请先使用分析绑定UID后再进行分析", is_group), at_sender=is_group)
         return
@@ -457,11 +520,9 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
         "Content-Type": "application/json",
     }
-    user_data: Dict[str, str] = {"uid": uid}
-    if user_name:
-        user_data["user_name"] = user_name
+    user_data = await _build_user_data(ev, uid, user_name)
     analysis_lang = await ScoreLangSettings.get_lang(ev.user_id)
-    payload = {
+    payload: Dict[str, object] = {
         "command_str": command_str,
         "images_base64": images_b64,
         "user_data": user_data,
