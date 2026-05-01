@@ -4,7 +4,7 @@
 - ``email_login_entry``：复用 xwuid 的 launcher SDK 登录命令
 - ``find_xwuid_net_uid``：在 xwuid 的 ``WavesBind`` 里找该用户绑定的国际服 UID
 - ``fetch_baseinfo``：拉 launcher SDK 玩家基础信息(24h 内存缓存)
-- ``get_qq_avatar_url``：QQ 号 → QQ 头像 URL
+- ``get_avatar_url``：从 Event 解析头像 URL(QQ 官机 / onebot 通用)
 
 xwuid 不存在时所有方法降级为不可用 / None,不影响 ScoreEcho 主功能。
 """
@@ -106,8 +106,20 @@ async def fetch_baseinfo(user_id: str, bot_id: str, uid: str) -> Optional[Dict[s
     return info
 
 
-def get_qq_avatar_url(user_id: str) -> Optional[str]:
-    """QQ 号 → QQ 头像 URL；非数字 user_id 返回 None。"""
-    if not user_id or not user_id.isdigit():
-        return None
-    return f"https://q.qlogo.cn/headimg_dl?dst_uin={user_id}&spec=640"
+def get_avatar_url(ev: Event) -> Optional[str]:
+    """从 Event 解析头像 URL。
+
+    优先用 ``ev.sender['avatar']``(适配器已经按 onebot / QQ 官机各自填好对应
+    的 q.qlogo.cn URL);拿不到再 fallback 到纯数字 user_id 的 QQ 头像 URL;
+    都没有返回 None。
+    """
+    sender = getattr(ev, "sender", None)
+    if isinstance(sender, dict):
+        avatar = sender.get("avatar")
+        if isinstance(avatar, str) and avatar:
+            return avatar
+
+    user_id = getattr(ev, "user_id", "") or ""
+    if user_id.isdigit():
+        return f"https://q.qlogo.cn/headimg_dl?dst_uin={user_id}&spec=640"
+    return None

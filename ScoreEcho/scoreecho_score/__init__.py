@@ -20,7 +20,7 @@ from ..utils.char_utils import PATTERN, alias_to_char_name_optional
 from ..utils.xwuid_bridge import (
     fetch_baseinfo,
     find_xwuid_net_uid,
-    get_qq_avatar_url,
+    get_avatar_url,
 )
 
 
@@ -220,7 +220,7 @@ async def _build_user_data(
     if user_name:
         user_data["user_name"] = user_name
 
-    avatar = get_qq_avatar_url(ev.user_id)
+    avatar = get_avatar_url(ev)
     if avatar:
         user_data["avatar_url"] = avatar
 
