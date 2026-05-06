@@ -83,6 +83,17 @@ def _save_result_data(path: Path, data: Dict[str, object]) -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def _get_score_templates() -> Optional[list[str]]:
+    config = seconfig.get_config("templates").data
+    if not isinstance(config, list):
+        return None
+
+    templates = [str(name).strip() for name in config if str(name).strip()]
+    if not templates or any(name.lower() == "all" for name in templates):
+        return None
+    return templates
+
+
 def _get_local_alias_path() -> Optional[Path]:
     local_alias_path = seconfig.get_config("localalias").data
     if not local_alias_path:
@@ -416,6 +427,9 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         "command_str": command_str,
         "images_base64": images_b64,
     }
+    templates = _get_score_templates()
+    if templates:
+        payload["templates"] = templates
 
     uid = await _resolve_score_uid(ev)
     if uid:
@@ -527,6 +541,9 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         "images_base64": images_b64,
         "user_data": user_data,
     }
+    templates = _get_score_templates()
+    if templates:
+        payload["templates"] = templates
     if analysis_lang:
         payload["lang"] = analysis_lang
 
