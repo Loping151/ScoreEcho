@@ -253,7 +253,18 @@ async def score_set_role_info(bot: Bot, ev: Event):
     return await bot.send(_format_msg(f"已设置{resolved}信息", is_group), at_sender=is_group)
 
 
-@sv_score_setting.on_regex(rf"^分析查看\s*(?P<role>{PATTERN})\s*(?:信息|資訊)$", block=True)
+@sv_score_setting.on_regex(
+    rf"^分析查看\s*(?P<role>{PATTERN})\s*(?:信息|資訊)$",
+    block=True,
+    to_ai="""查询自己在 ScoreEcho 里给某个角色配置的辅助信息（额外属性/共鸣链等用户自填字段）。
+
+当用户问「分析查看长离信息 / 我在 ScoreEcho 给椿设置了啥」时调用。
+text 是 "分析查看 <角色名> 信息" 格式。
+
+Args:
+    text: 例: "分析查看长离信息" / "分析查看 椿 信息"。
+""",
+)
 async def score_view_role_info(bot: Bot, ev: Event):
     is_group = ev.group_id is not None
     uid = await _get_bound_uid(ev)

@@ -348,7 +348,18 @@ def _format_msg(msg: str, is_group: bool) -> str:
     return msg
 
 
-@sv_phantom_rank.on_fullmatch(("分析练度", "分析練度", "分析练度统计", "分析練度統計"), block=True)
+@sv_phantom_rank.on_fullmatch(
+    ("分析练度", "分析練度", "分析练度统计", "分析練度統計"),
+    block=True,
+    to_ai="""查询自己鸣潮账号的练度统计（基于 ScoreEcho 评分结果）。
+
+当用户问「分析练度 / 我练度怎样（ScoreEcho 版）」时调用。
+需要用户已通过 ScoreEcho 评分过角色（用「分析」命令对面板图评过分）。返回各角色总分+评级。
+
+Args:
+    text: 无需参数，留空即可。
+""",
+)
 async def score_phantom_rank(bot: Bot, ev: Event):
     uid = await _get_bound_uid(ev)
     if not uid:
