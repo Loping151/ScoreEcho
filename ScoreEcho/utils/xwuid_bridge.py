@@ -18,25 +18,6 @@ from gsuid_core.bot import Bot
 from gsuid_core.logger import logger
 from gsuid_core.models import Event
 
-try:
-    from XutheringWavesUID.XutheringWavesUID.wutheringwaves_login.email_login import (
-        email_login_entry as _xw_email_login_entry,
-    )
-    from XutheringWavesUID.XutheringWavesUID.utils.api.launcher_chain import (
-        fetch_launcher_panel as _xw_fetch_launcher_panel,
-    )
-    from XutheringWavesUID.XutheringWavesUID.utils.database.models import (
-        WavesBind as _XwWavesBind,
-    )
-
-    XWUID_AVAILABLE = True
-except Exception as _e:
-    logger.warning(f"[ScoreEcho] xwuid 桥接不可用：{_e}")
-    _xw_email_login_entry = None
-    _xw_fetch_launcher_panel = None
-    _XwWavesBind = None
-    XWUID_AVAILABLE = False
-
 
 _NET_UID_THRESHOLD = 200000000
 _BASEINFO_TTL = 24 * 3600
@@ -52,21 +33,29 @@ def is_net_uid(uid: str) -> bool:
 
 async def email_login_entry(bot: Bot, ev: Event):
     """触发 xwuid 的邮箱登录流程；xwuid 不在时给提示。"""
-    if not XWUID_AVAILABLE or _xw_email_login_entry is None:
+    try:
+        from plugins.XutheringWavesUID.XutheringWavesUID.wutheringwaves_login.email_login import (
+            email_login_entry as entry,
+        )
+    except ImportError:
         at_sender = ev.group_id is not None
         return await bot.send(
-            "国际服登录依赖 XutheringWavesUID 插件，未检测到该插件。",
+            "分析登录依赖 XutheringWavesUID 插件，未检测到该插件。",
             at_sender=at_sender,
         )
-    return await _xw_email_login_entry(bot, ev)
+    return await entry(bot, ev)
 
 
 async def find_xwuid_net_uid(user_id: str, bot_id: str) -> Optional[str]:
     """在 xwuid 的 WavesBind 里找该用户绑定的第一个国际服 UID。"""
-    if not XWUID_AVAILABLE or _XwWavesBind is None:
+    try:
+        from plugins.XutheringWavesUID.XutheringWavesUID.utils.database.models import (
+            WavesBind,
+        )
+    except ImportError:
         return None
     try:
-        uid_list = await _XwWavesBind.get_uid_list_by_game(user_id, bot_id) or []
+        uid_list = await WavesBind.get_uid_list_by_game(user_id, bot_id) or []
     except Exception:
         logger.exception("[ScoreEcho] 查询 xwuid WavesBind 失败")
         return None
@@ -82,9 +71,13 @@ async def fetch_baseinfo(user_id: str, bot_id: str, uid: str) -> Optional[Dict[s
     返回 ``{role_name, union_level, world_level}`` 或 ``None``。
     仅对国际服 UID 生效。
     """
-    if not XWUID_AVAILABLE or _xw_fetch_launcher_panel is None:
-        return None
     if not is_net_uid(uid):
+        return None
+    try:
+        from plugins.XutheringWavesUID.XutheringWavesUID.utils.api.launcher_chain import (
+            fetch_launcher_panel,
+        )
+    except ImportError:
         return None
 
     now = time.time()
@@ -92,7 +85,7 @@ async def fetch_baseinfo(user_id: str, bot_id: str, uid: str) -> Optional[Dict[s
     if cached and now - cached[0] < _BASEINFO_TTL:
         return cached[1]
 
-    panel = await _xw_fetch_launcher_panel(user_id, bot_id, uid)
+    panel = await fetch_launcher_panel(user_id, bot_id, uid)
     if panel is None:
         return None
 
