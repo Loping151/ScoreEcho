@@ -88,7 +88,7 @@ async def ensure_alias_resource() -> bool:
     urls = [
         "https://ww1.loping151.top/XutheringWavesUID/resource/map/alias/char_alias.json",
         "https://ww2.loping151.top/XutheringWavesUID/resource/map/alias/char_alias.json",
-        "https://ww3.loping151.top/XutheringWavesUID/resource/map/alias/char_alias.json",
+        "https://ww3.loping151.cn/XutheringWavesUID/resource/map/alias/char_alias.json",
     ]
 
     for url in urls:
