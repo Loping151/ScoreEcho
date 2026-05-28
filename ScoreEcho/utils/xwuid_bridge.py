@@ -57,7 +57,7 @@ async def find_xwuid_net_uid(user_id: str, bot_id: str) -> Optional[str]:
     try:
         uid_list = await WavesBind.get_uid_list_by_game(user_id, bot_id) or []
     except Exception:
-        logger.exception("[ScoreEcho] 查询 xwuid WavesBind 失败")
+        logger.exception("[鸣潮评分·桥接] 查询 xwuid WavesBind 失败")
         return None
     for uid in uid_list:
         if is_net_uid(uid):

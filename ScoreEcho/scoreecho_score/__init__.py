@@ -138,11 +138,11 @@ def _replace_alias(command_str: str, alias_path: Path) -> str:
             for alias in sorted(alias_list, key=len, reverse=True):
                 if alias in command_str:
                     command_str = command_str.replace(alias, char_name)
-                    logger.info(f"替换别名: {alias} -> {char_name}")
+                    logger.info(f"[鸣潮评分·别名] 替换别名: {alias} -> {char_name}")
                     matched_name = char_name
                     break
     except Exception as e:
-        logger.error(f"加载本地别名文件失败: {e}")
+        logger.error(f"[鸣潮评分·别名] 加载本地别名文件失败: {e}")
     return command_str, matched_name
 
 
@@ -203,7 +203,7 @@ async def _resolve_score_uid(ev: Event) -> Optional[str]:
             code = await ScoreUser.insert_uid(user_id, bot_id, xw_net_uid, ev.group_id)
             if code in (0, -2):
                 await ScoreUser.switch_uid_by_game(user_id, bot_id, xw_net_uid)
-            logger.info(f"[ScoreEcho] 自动从 xwuid 添加国际服 UID {xw_net_uid}")
+            logger.info(f"[鸣潮评分·UID解析] 自动从 xwuid 添加国际服 UID {xw_net_uid}")
 
     return await ScoreUser.get_uid_by_game(user_id, bot_id)
 
@@ -299,9 +299,9 @@ async def delete_role_panel(bot: Bot, ev: Event):
     if panel_exists:
         try:
             panel_path.unlink()
-            logger.info(f"已删除面板图片: {panel_path}")
+            logger.info(f"[鸣潮评分·删除面板] 已删除面板图片: {panel_path}")
         except Exception as e:
-            logger.error(f"删除面板图片失败: {e}")
+            logger.error(f"[鸣潮评分·删除面板] 删除面板图片失败: {e}")
             return await bot.send(_format_msg(f"删除面板图片失败: {e}", is_group), at_sender=is_group)
 
     if result_path.exists():
@@ -310,7 +310,7 @@ async def delete_role_panel(bot: Bot, ev: Event):
             score_exists = True
             del result_data[role_name]
             _save_result_data(result_path, result_data)
-            logger.info(f"已删除评分数据: {role_name}")
+            logger.info(f"[鸣潮评分·删除面板] 已删除评分数据: {role_name}")
 
     if not panel_exists and not score_exists:
         return await bot.send(_format_msg(f"未找到{role_name}的面板数据", is_group), at_sender=is_group)
@@ -410,11 +410,11 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     try:
         images_b64 = await _encode_images(upload_images)
     except httpx.RequestError as e:
-        logger.error(f"下载图片失败: {e}")
+        logger.error(f"[鸣潮评分·评分] 下载图片失败: {e}")
         await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=is_group)
         return
     except Exception as e:
-        logger.error(f"图片处理失败: {e}")
+        logger.error(f"[鸣潮评分·评分] 图片处理失败: {e}")
         await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
@@ -427,7 +427,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
     if alias_path:
         command_str, _ = _replace_alias(command_str, alias_path)
 
-    logger.info(f"准备发送评分请求，命令参数: {command_str}")
+    logger.info(f"[鸣潮评分·评分] 准备发送评分请求，命令参数: {command_str}")
 
     headers = {
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
@@ -465,7 +465,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
             message = data.get("message")
             result_image_b64 = data.get("result_image_base64")
 
-            logger.info(f"API 响应消息: {message}")
+            logger.info(f"[鸣潮评分·评分] API 响应消息: {message}")
 
             if result_image_b64:
                 result_image_data = base64.b64decode(result_image_b64)
@@ -480,15 +480,15 @@ async def score_phantom_handler(bot: Bot, ev: Event):
             error_msg += f"\n错误信息: {error_detail}"
         except Exception:
             error_msg += f"\n原始响应: {e.response.text}"
-        logger.error(error_msg)
+        logger.error(f"[鸣潮评分·评分] {error_msg}")
         await bot.send(error_msg, at_sender=is_group)
 
     except httpx.RequestError as e:
-        logger.error(f"网络请求失败: {e}")
+        logger.error(f"[鸣潮评分·评分] 网络请求失败: {e}")
         await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=is_group)
 
     except Exception as e:
-        logger.exception(f"处理评分时发生未知错误: {e}")
+        logger.exception(f"[鸣潮评分·评分] 处理评分时发生未知错误: {e}")
         await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=is_group)
 
 
@@ -513,11 +513,11 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     try:
         images_b64 = await _encode_images(upload_images)
     except httpx.RequestError as e:
-        logger.error(f"下载图片失败: {e}")
+        logger.error(f"[鸣潮评分·分析] 下载图片失败: {e}")
         await bot.send(_format_msg("下载图片失败，请稍后再试。", is_group), at_sender=is_group)
         return
     except Exception as e:
-        logger.error(f"图片处理失败: {e}")
+        logger.error(f"[鸣潮评分·分析] 图片处理失败: {e}")
         await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
@@ -539,7 +539,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
     if role_info:
         command_str = f"{command_str} {role_info}".strip()
 
-    logger.info(f"准备发送分析请求，命令参数: {command_str}, 是否有参数: {has_args}")
+    logger.info(f"[鸣潮评分·分析] 准备发送分析请求，命令参数: {command_str}, 是否有参数: {has_args}")
 
     headers = {
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
@@ -574,7 +574,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
             score_results = data.get("score_results")
             matched_character = data.get("matched_character")
 
-            logger.info(f"API 响应消息: {message}")
+            logger.info(f"[鸣潮评分·分析] API 响应消息: {message}")
 
             if result_image_b64:
                 result_image_data = base64.b64decode(result_image_b64)
@@ -600,13 +600,13 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
             error_msg += f"\n错误信息: {error_detail}"
         except Exception:
             error_msg += f"\n原始响应: {e.response.text}"
-        logger.error(error_msg)
+        logger.error(f"[鸣潮评分·分析] {error_msg}")
         await bot.send(error_msg, at_sender=is_group)
 
     except httpx.RequestError as e:
-        logger.error(f"网络请求失败: {e}")
+        logger.error(f"[鸣潮评分·分析] 网络请求失败: {e}")
         await bot.send(_format_msg(f"连接评分服务器失败。\n错误: {e}", is_group), at_sender=is_group)
 
     except Exception as e:
-        logger.exception(f"处理分析时发生未知错误: {e}")
+        logger.exception(f"[鸣潮评分·分析] 处理分析时发生未知错误: {e}")
         await bot.send(_format_msg(f"未知错误。联系小维\n错误详情: {e}", is_group), at_sender=is_group)

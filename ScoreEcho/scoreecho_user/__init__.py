@@ -243,6 +243,10 @@ async def score_set_role_info(bot: Bot, ev: Event):
         "环境": "换敌人",
         "怪物": "换敌人",
         "怪": "换敌人",
+        "共鳴模態": "换模态",
+        "共鸣模态": "换模态",
+        "模態": "换模态",
+        "模态": "换模态",
     }
     for key, value in replacements.items():
         info = re.sub(rf"(?<!换){key}", value, info)
