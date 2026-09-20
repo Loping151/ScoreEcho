@@ -155,10 +155,42 @@ def _extract_role_from_command(command_str: str) -> str:
 async def _encode_images(upload_images):
     images_b64 = []
     async with httpx.AsyncClient(timeout=10.0) as client:
-        for image_url in upload_images:
-            resp = await client.get(image_url)
-            resp.raise_for_status()
-            image_bytes = resp.content
+        for image_source in upload_images:
+
+            # 1. HTTP / HTTPS 图片
+            if image_source.startswith(("http://", "https://")):
+                resp = await client.get(image_source)
+                resp.raise_for_status()
+                image_bytes = resp.content
+
+            # 2. data:image/png;base64,xxxx
+            elif image_source.startswith("data:image/"):
+                try:
+                    _, base64_data = image_source.split(",", 1)
+                    image_bytes = base64.b64decode(base64_data)
+                except Exception as e:
+                    raise ValueError(f"Base64 图片解析失败: {e}") from e
+
+            # 3. base64://xxxx
+            elif image_source.startswith("base64://"):
+                try:
+                    image_bytes = base64.b64decode(
+                        image_source[len("base64://"):]
+                    )
+                except Exception as e:
+                    raise ValueError(f"Base64 图片解析失败: {e}") from e
+
+            # 4. 纯 Base64
+            else:
+                try:
+                    image_bytes = base64.b64decode(
+                        image_source,
+                        validate=True,
+                    )
+                except Exception as e:
+                    raise ValueError(
+                        f"无法识别图片来源: {image_source[:50]!r}"
+                    ) from e
 
             max_size_bytes = 2 * 1024 * 1024
 
