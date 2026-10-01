@@ -31,6 +31,8 @@ sv_phantom_score = SV("鸣潮声骸评分", priority=10)
 sv_phantom_analysis = SV("鸣潮声骸分析", priority=10)
 sv_phantom_rank = SV("鸣潮声骸练度", priority=3)
 
+_SSL_CONTEXT = httpx.create_ssl_context()
+
 async def get_image(ev: Event):
     res = []
     for content in ev.content:
@@ -197,7 +199,7 @@ def _compress_image(image_bytes: bytes) -> bytes:
 
 async def _encode_images(upload_images):
     images_b64 = []
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(timeout=10.0, verify=_SSL_CONTEXT) as client:
         for image_source in upload_images:
             image_bytes = await _fetch_image_bytes(client, image_source)
             compressed_image_bytes = await asyncio.to_thread(_compress_image, image_bytes)
@@ -474,7 +476,7 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         payload["lang"] = user_lang
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=60.0, verify=_SSL_CONTEXT) as client:
             response = await client.post(
                 seconfig.get_config("endpoint").data,
                 headers=headers,
@@ -581,7 +583,7 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         payload["lang"] = analysis_lang
 
     try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
+        async with httpx.AsyncClient(timeout=60.0, verify=_SSL_CONTEXT) as client:
             response = await client.post(
                 seconfig.get_config("endpoint").data,
                 headers=headers,
