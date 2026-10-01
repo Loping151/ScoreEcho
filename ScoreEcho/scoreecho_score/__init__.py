@@ -1,5 +1,7 @@
+import asyncio
 import base64
 import json
+import math
 from io import BytesIO
 from pathlib import Path
 from typing import Dict, Optional
@@ -170,31 +172,35 @@ async def _fetch_image_bytes(client: httpx.AsyncClient, source: str) -> bytes:
         raise ValueError(f"无法识别图片来源: {source[:50]!r}") from e
 
 
+_MAX_IMAGE_BYTES = 2 * 1024 * 1024
+_MAX_IMAGE_PIXELS = 3840 * 2160
+
+
+def _compress_image(image_bytes: bytes) -> bytes:
+    with Image.open(BytesIO(image_bytes)) as img:
+        if img.mode not in ("RGB",):
+            img = img.convert("RGB")
+
+        scale = min(1.0, math.sqrt(_MAX_IMAGE_PIXELS / (img.width * img.height)))
+        while True:
+            resized = img
+            if scale < 1:
+                size = (max(1, round(img.width * scale)), max(1, round(img.height * scale)))
+                resized = img.resize(size, Image.Resampling.LANCZOS)
+
+            output_buffer = BytesIO()
+            resized.save(output_buffer, format="WEBP", quality=100)
+            if output_buffer.tell() < _MAX_IMAGE_BYTES:
+                return output_buffer.getvalue()
+            scale *= math.sqrt(_MAX_IMAGE_BYTES / output_buffer.tell()) * 0.9
+
+
 async def _encode_images(upload_images):
     images_b64 = []
     async with httpx.AsyncClient(timeout=10.0) as client:
         for image_source in upload_images:
             image_bytes = await _fetch_image_bytes(client, image_source)
-
-            max_size_bytes = 2 * 1024 * 1024
-
-            with Image.open(BytesIO(image_bytes)) as img:
-                if img.mode not in ("RGB",):
-                    img = img.convert("RGB")
-
-                output_buffer = BytesIO()
-                quality = 100
-
-                while quality > 10:
-                    output_buffer.seek(0)
-                    output_buffer.truncate()
-                    img.save(output_buffer, format="WEBP", quality=quality)
-                    if output_buffer.tell() < max_size_bytes:
-                        break
-                    quality -= 5
-
-                compressed_image_bytes = output_buffer.getvalue()
-
+            compressed_image_bytes = await asyncio.to_thread(_compress_image, image_bytes)
             images_b64.append(base64.b64encode(compressed_image_bytes).decode("utf-8"))
     return images_b64
 
