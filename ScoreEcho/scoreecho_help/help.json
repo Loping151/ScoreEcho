@@ -136,6 +136,14 @@
         "need_ck": false,
         "need_sk": false,
         "need_admin": false
+      },
+      {
+        "name": "自定义权重",
+        "desc": "评分/分析带上权重ID；不带则沿用xw的权重设置",
+        "eg": "评分椿4c cw_xxxxxxxx",
+        "need_ck": false,
+        "need_sk": false,
+        "need_admin": false
       }
     ]
   }

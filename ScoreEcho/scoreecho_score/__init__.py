@@ -20,9 +20,12 @@ from ..utils.resource import CHAR_ALIAS_PATH, XW_CHAR_ALIAS_PATH, get_user_dir
 from ..utils.charlist_draw import draw_charlist_image
 from ..utils.char_utils import PATTERN, alias_to_char_name_optional
 from ..utils.xwuid_bridge import (
+    CW_PATTERN,
+    custom_weight_fields,
     fetch_baseinfo,
     find_xwuid_net_uid,
     get_avatar_url,
+    split_weight_id,
 )
 
 
@@ -372,6 +375,21 @@ def _format_msg(msg: str, is_group: bool) -> str:
     return msg
 
 
+async def _send_weight_notices(bot: Bot, notices: list[str]) -> None:
+    if notices:
+        await bot.send("\n".join(f"[鸣潮] {n}" for n in notices))
+
+
+def _http_error_msg(e: httpx.HTTPStatusError) -> str:
+    try:
+        detail = e.response.json().get("detail", "无详细信息")
+    except Exception:
+        return f"API 请求失败，服务器返回错误码: {e.response.status_code}\n原始响应: {e.response.text}"
+    if e.response.status_code == 400 and isinstance(detail, str):
+        return detail
+    return f"API 请求失败，服务器返回错误码: {e.response.status_code}\n错误信息: {detail}"
+
+
 @sv_phantom_rank.on_fullmatch(
     ("分析练度", "分析練度", "分析练度统计", "分析練度統計"),
     block=True,
@@ -414,8 +432,8 @@ async def score_phantom_rank(bot: Bot, ev: Event):
 @sv_phantom_score.on_command(("评分", "評分", "查分", "pf"), block=True)
 @sv_phantom_score.on_regex(
     (
-        rf"^({PATTERN})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*({PATTERN})?$",
-        rf"^({PATTERN})(?:评分|評分|查分)$",
+        rf"^({PATTERN})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*({PATTERN})?\s*({CW_PATTERN})?$",
+        rf"^({PATTERN})(?:评分|評分|查分)\s*({CW_PATTERN})?$",
     ),
     block=True,
 )
@@ -446,12 +464,14 @@ async def score_phantom_handler(bot: Bot, ev: Event):
         command_str = ' '.join(g for g in ev.regex_group if g)
     else:
         command_str = ev.text.strip()
+    command_str, explicit_cw = split_weight_id(command_str)
 
     alias_path = _get_local_alias_path()
+    matched_name = None
     if alias_path:
-        command_str, _ = _replace_alias(command_str, alias_path)
+        command_str, matched_name = _replace_alias(command_str, alias_path)
 
-    logger.info(f"[鸣潮评分·评分] 准备发送评分请求，命令参数: {command_str}")
+    logger.info(f"[鸣潮评分·评分] 准备发送评分请求，命令参数: {command_str}, 指定权重: {explicit_cw}")
 
     headers = {
         "Authorization": f"Bearer {seconfig.get_config('xwtoken').data}",
@@ -474,6 +494,10 @@ async def score_phantom_handler(bot: Bot, ev: Event):
 
     if user_lang:
         payload["lang"] = user_lang
+
+    weight_fields, notices = await custom_weight_fields(ev, uid, matched_name, explicit_cw)
+    payload.update(weight_fields)
+    await _send_weight_notices(bot, notices)
 
     try:
         async with httpx.AsyncClient(timeout=60.0, verify=_SSL_CONTEXT) as client:
@@ -498,14 +522,9 @@ async def score_phantom_handler(bot: Bot, ev: Event):
                 await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=is_group)
 
     except httpx.HTTPStatusError as e:
-        error_msg = f"API 请求失败，服务器返回错误码: {e.response.status_code}"
-        try:
-            error_detail = e.response.json().get("detail", "无详细信息")
-            error_msg += f"\n错误信息: {error_detail}"
-        except Exception:
-            error_msg += f"\n原始响应: {e.response.text}"
+        error_msg = _http_error_msg(e)
         logger.error(f"[鸣潮评分·评分] {error_msg}")
-        await bot.send(error_msg, at_sender=is_group)
+        await bot.send(_format_msg(error_msg, is_group), at_sender=is_group)
 
     except httpx.RequestError as e:
         logger.error(f"[鸣潮评分·评分] 网络请求失败: {e}")
@@ -545,9 +564,10 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         await bot.send(_format_msg("图片处理失败，请稍后再试。", is_group), at_sender=is_group)
         return
 
-    command_str = ev.text.strip()
+    command_str, explicit_cw = split_weight_id(ev.text.strip())
     has_args = bool(command_str)
     alias_path = _get_local_alias_path()
+    matched_name = None
     if alias_path:
         command_str, matched_name = _replace_alias(command_str, alias_path)
 
@@ -581,6 +601,9 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
         payload["templates"] = templates
     if analysis_lang:
         payload["lang"] = analysis_lang
+    weight_fields, notices = await custom_weight_fields(ev, uid, role_name or None, explicit_cw)
+    payload.update(weight_fields)
+    await _send_weight_notices(bot, notices)
 
     try:
         async with httpx.AsyncClient(timeout=60.0, verify=_SSL_CONTEXT) as client:
@@ -618,14 +641,9 @@ async def analyze_phantom_handler(bot: Bot, ev: Event):
                 await bot.send(_format_msg(f"处理完成，但未能生成图片：\n{message}", is_group), at_sender=is_group)
 
     except httpx.HTTPStatusError as e:
-        error_msg = f"API 请求失败，服务器返回错误码: {e.response.status_code}"
-        try:
-            error_detail = e.response.json().get("detail", "无详细信息")
-            error_msg += f"\n错误信息: {error_detail}"
-        except Exception:
-            error_msg += f"\n原始响应: {e.response.text}"
+        error_msg = _http_error_msg(e)
         logger.error(f"[鸣潮评分·分析] {error_msg}")
-        await bot.send(error_msg, at_sender=is_group)
+        await bot.send(_format_msg(error_msg, is_group), at_sender=is_group)
 
     except httpx.RequestError as e:
         logger.error(f"[鸣潮评分·分析] 网络请求失败: {e}")

@@ -5,14 +5,16 @@
 - ``find_xwuid_net_uid``：在 xwuid 的 ``WavesBind`` 里找该用户绑定的国际服 UID
 - ``fetch_baseinfo``：拉 launcher SDK 玩家基础信息(24h 内存缓存)
 - ``get_avatar_url``：从 Event 解析头像 URL(QQ 官机 / onebot 通用)
+- ``custom_weight_fields``：按 xwuid 的自定义权重设置组装评分请求字段
 
 xwuid 不存在时所有方法降级为不可用 / None,不影响 ScoreEcho 主功能。
 """
 
 from __future__ import annotations
 
+import re
 import time
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from gsuid_core.bot import Bot
 from gsuid_core.logger import logger
@@ -20,6 +22,8 @@ from gsuid_core.models import Event
 
 
 _NET_UID_THRESHOLD = 200000000
+CW_PATTERN = r"[cC][wW]_[0-9a-zA-Z]{8}"
+_CW_RE = re.compile(CW_PATTERN)
 _BASEINFO_TTL = 24 * 3600
 _baseinfo_cache: Dict[str, Tuple[float, Dict[str, Any]]] = {}
 
@@ -116,3 +120,48 @@ def get_avatar_url(ev: Event) -> Optional[str]:
     if user_id.isdigit():
         return f"https://q.qlogo.cn/headimg_dl?dst_uin={user_id}&spec=640"
     return None
+
+
+def split_weight_id(text: str) -> Tuple[str, Optional[str]]:
+    """从指令里拆出 cw_ 权重 ID, 返回 (去掉 ID 的指令, ID)。"""
+    m = _CW_RE.search(text or "")
+    if not m:
+        return text, None
+    rest = re.sub(r"\s+", " ", _CW_RE.sub(" ", text)).strip()
+    return rest, m.group(0).lower()
+
+
+async def custom_weight_fields(
+    ev: Event, uid: Optional[str], role_name: Optional[str], explicit: Optional[str]
+) -> Tuple[Dict[str, Any], List[str]]:
+    """组装评分请求的自定义权重字段, 返回 (字段, 提示)。
+
+    指令里的 ID 由评分服务校验; 其余按 xwuid 设置: 群权重 > 个人设置/订阅(按当前 UID),
+    条件权重按该 UID 面板缓存里角色的共鸣链/专武取定。
+    """
+    fields: Dict[str, Any] = {}
+    if explicit:
+        fields["weight_id"] = explicit
+    try:
+        from plugins.XutheringWavesUID.XutheringWavesUID.utils import custom_weight as cw
+        from plugins.XutheringWavesUID.XutheringWavesUID.utils.name_convert import (
+            char_name_to_char_id,
+        )
+    except ImportError:
+        return fields, []
+    if not cw.enabled():
+        return fields, []
+    char_ids = None
+    if role_name:
+        cid = char_name_to_char_id(role_name)
+        if cid:
+            char_ids = [cid]
+    try:
+        plan = await cw.build_plan(ev, char_ids, None, uid=uid)
+    except Exception:
+        logger.exception("[鸣潮评分·桥接] 读取自定义权重设置失败")
+        return fields, []
+    if plan.choices:
+        codes = await cw.role_codes(uid) if uid else {}
+        fields["weights"] = plan.resolved(codes)
+    return fields, plan.notices

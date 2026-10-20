@@ -31,6 +31,8 @@ api二次开发要求：上传图片大小不能超过1mb每张，速率不得�
 
 支持繁体和英文。支持多图，支持部分同一图中有多个声骸的情况，见下方例子。如希望开发其他框架插件，**请添加我为collabotor**。
 
+**自定义权重**：指令里带上 [www.loping151.site](https://www.loping151.site) 的权重 ID 即按该权重评分，如 `ww评分椿4c cw_xxxxxxxx`、`ww椿评分cw_xxxxxxxx`、`ww分析椿 cw_xxxxxxxx`。不带 ID 时沿用 XutheringWavesUID 里的设置（群权重 > 当前 UID 的个人设置/订阅），都没有则用内置模板。
+
 **语言**：如果英文输入但不希望得到英文结果，需要修改endpoint为 /score_zh。类似的，如果总是希望结果为英文，则可以将endpoint改为 /score_en
 
 命令中任意位置带有zh和en也可以切换语言，前提是符合你写的插件的正则
