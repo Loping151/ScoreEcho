@@ -376,8 +376,12 @@ def _format_msg(msg: str, is_group: bool) -> str:
 
 
 async def _send_weight_notices(bot: Bot, notices: list[str]) -> None:
-    if notices:
+    if not notices:
+        return
+    try:
         await bot.send("\n".join(f"[鸣潮] {n}" for n in notices))
+    except Exception as e:
+        logger.warning(f"[鸣潮评分] 权重提示发送失败: {e}")
 
 
 def _http_error_msg(e: httpx.HTTPStatusError) -> str:

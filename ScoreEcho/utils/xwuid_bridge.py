@@ -151,17 +151,18 @@ async def custom_weight_fields(
         return fields, []
     if not cw.enabled():
         return fields, []
-    char_ids = None
-    if role_name:
-        cid = char_name_to_char_id(role_name)
-        if cid:
-            char_ids = [cid]
+    # 方案与配置码用同一个 UID(没给就取 xwuid 当前绑定的)
     try:
+        char_ids = None
+        if role_name:
+            cid = char_name_to_char_id(role_name)
+            if cid:
+                char_ids = [cid]
+        uid = uid or await cw.bound_uid(ev)
         plan = await cw.build_plan(ev, char_ids, None, uid=uid)
+        if plan.choices:
+            fields["weights"] = plan.resolved(await cw.role_codes(uid) if uid else {})
     except Exception:
         logger.exception("[鸣潮评分·桥接] 读取自定义权重设置失败")
         return fields, []
-    if plan.choices:
-        codes = await cw.role_codes(uid) if uid else {}
-        fields["weights"] = plan.resolved(codes)
     return fields, plan.notices
