@@ -436,7 +436,7 @@ async def score_phantom_rank(bot: Bot, ev: Event):
 @sv_phantom_score.on_command(("评分", "評分", "查分", "pf"), block=True)
 @sv_phantom_score.on_regex(
     (
-        rf"^({PATTERN})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*({PATTERN})?\s*({CW_PATTERN})?$",
+        rf"^(?!.*换)({PATTERN})\s*(?:[cC](?:[oO][sS][tT])?\s*([134])|([134])\s*[cC](?:[oO][sS][tT])?)\s*({PATTERN})?\s*({CW_PATTERN})?$",
         rf"^({PATTERN})(?:评分|評分|查分)\s*({CW_PATTERN})?$",
     ),
     block=True,
